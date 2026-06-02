@@ -4,7 +4,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 950;
-  width: min(800px, calc(100vw - 32px));
+  width: min(800px, calc(100vw - 24px));
   background: rgba(8, 11, 20, 0.55);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -16,6 +16,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+/* iPhone: stack Fra/Til vertically */
+@media (max-width: 600px) {
+  .search-panel { top: 12px; padding: 9px 10px; gap: 6px; border-radius: 12px; }
+  .search-field  { flex: 1 1 100%; }   /* each field fills full row */
+  .search-arrow  { display: none; }
+  .search-go     { flex: 1; }
+  .search-close  { flex: 0 0 36px; }
 }
 
 /* ── individual field row ───────────────────────────── */

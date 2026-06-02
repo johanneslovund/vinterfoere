@@ -73,3 +73,7 @@
   background: rgba(255,255,255,0.2);
   flex-shrink: 0;
 }
+
+@media (max-width: 600px) {
+  .wx-legend { transform: translateY(-50%) scale(0.85); transform-origin: left center; }
+}

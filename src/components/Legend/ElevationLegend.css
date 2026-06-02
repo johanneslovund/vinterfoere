@@ -79,3 +79,7 @@
   color: rgba(255,255,255,0.28);
   white-space: nowrap;
 }
+
+@media (max-width: 600px) {
+  .elev-legend { transform: translateY(-50%) scale(0.85); transform-origin: left center; }
+}

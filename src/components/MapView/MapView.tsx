@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
 import { useMap } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GridWeather, riskLevel, RISK_COLORS, RISK_LABELS } from '../../types/weather';
 import { CanvasHeatmapLayer } from './CanvasHeatmapLayer';
@@ -17,10 +18,49 @@ import { WeatherLegend } from '../Legend/WeatherLegend';
 import { RouteResult } from '../../services/routeApi';
 import './MapView.css';
 
+const isTouchDevice = () =>
+  typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
 interface MapClickProps { onMapClick: (lat: number, lon: number) => void }
 function MapClickHandler({ onMapClick }: MapClickProps) {
-  useMapEvents({ click(e) { onMapClick(e.latlng.lat, e.latlng.lng) } })
-  return null
+  useMapEvents({
+    // Desktop: regular click
+    click(e) {
+      if (!isTouchDevice()) onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+    // Mobile/tablet: long press fires contextmenu in Leaflet
+    contextmenu(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+// Red pin marker for selected location — uses a custom DivIcon via imperative Leaflet
+function PinMarker({ lat, lon }: { lat: number; lon: number }) {
+  const map   = useMap();
+  const ref   = useRef<L.Marker | null>(null);
+
+  useEffect(() => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:20px;height:26px;
+        background:linear-gradient(145deg,#ff5555,#cc0000);
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        box-shadow:0 3px 12px rgba(0,0,0,0.55);
+        border:2px solid rgba(255,255,255,0.7);
+      "></div>`,
+      iconSize:   [20, 26],
+      iconAnchor: [10, 26],
+    });
+    const marker = L.marker([lat, lon], { icon }).addTo(map);
+    ref.current = marker;
+    return () => { marker.remove(); };
+  }, [lat, lon, map]);
+
+  return null;
 }
 
 interface FlyToProps {
@@ -56,9 +96,10 @@ interface MapViewProps {
   routeResult: RouteResult | null;
   onMapClick: (lat: number, lon: number) => void;
   webcams: Webcam[];
+  pinLocation: { lat: number; lon: number } | null;
 }
 
-export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMapClick, webcams }: MapViewProps) {
+export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMapClick, webcams, pinLocation }: MapViewProps) {
   return (
     <div className="map-container">
       <MapContainer center={[65.0, 15.0]} zoom={5}
@@ -94,6 +135,7 @@ export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMap
           );
         })}
 
+        {pinLocation && <PinMarker lat={pinLocation.lat} lon={pinLocation.lon} />}
         <FlyTo target={flyTarget} />
       </MapContainer>
 

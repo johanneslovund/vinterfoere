@@ -44,6 +44,7 @@ export default function App() {
   const [routeTo,   setRouteTo]   = useState<[number,number] | null>(null);
   const [routeToName, setRouteToName] = useState('');
   const [panel, setPanel]               = useState<PanelState | null>(null);
+  const [pinLocation, setPinLocation]   = useState<{ lat: number; lon: number } | null>(null);
 
   function onToggle(key: keyof MapToggles) {
     setToggles(t => ({ ...t, [key]: !t[key] }));
@@ -110,6 +111,7 @@ export default function App() {
   const handleMapClick = useCallback(async (lat: number, lon: number) => {
     const wx = nearestWeather(lat, lon, data);
 
+    setPinLocation({ lat, lon });
     // Open panel immediately — analysis is local so no loading delay needed
     setPanel({
       lat, lon,
@@ -165,7 +167,7 @@ export default function App() {
         <LocationPanel
           {...panel}
           aiLoading={panel.aiLoading}
-          onClose={() => setPanel(null)}
+          onClose={() => { setPanel(null); setPinLocation(null); }}
         />
       )}
 
@@ -177,6 +179,7 @@ export default function App() {
         routeResult={routeResult}
         onMapClick={handleMapClick}
         webcams={webcams}
+        pinLocation={pinLocation}
       />
     </>
   );

@@ -3,7 +3,7 @@
   bottom: 72px;
   right: 20px;
   z-index: 950;
-  width: min(380px, calc(100vw - 32px));
+  width: min(380px, calc(100vw - 24px));
   background: rgba(8, 11, 20, 0.62);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -17,6 +17,19 @@
 @keyframes locSlideIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* iPhone: full-width bottom sheet */
+@media (max-width: 600px) {
+  .loc-panel {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
 }
 
 /* Header */
