@@ -139,33 +139,30 @@ export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMap
         <FlyTo target={flyTarget} />
       </MapContainer>
 
-      {/* Toggle strip */}
-      <div className="map-toggles">
-        <button
-          className={`map-toggle-btn${toggles.traffic ? ' map-toggle-btn--active' : ''}`}
-          onClick={() => onToggle('traffic')}>
-          {toggles.traffic ? 'Skjul trafikk' : 'Trafikk'}
-        </button>
-        <button
-          className={`map-toggle-btn${toggles.vaer ? ' map-toggle-btn--active' : ''}`}
-          onClick={() => onToggle('vaer')}>
-          Vær
-        </button>
-        <button
-          className={`map-toggle-btn${toggles.fjell ? ' map-toggle-btn--active' : ''}`}
-          onClick={() => onToggle('fjell')}>
-          Fjelloverganger
-        </button>
-        <button
-          className={`map-toggle-btn${toggles.elevation ? ' map-toggle-btn--active' : ''}`}
-          onClick={() => onToggle('elevation')}>
-          Høydekart
-        </button>
-        <button
-          className={`map-toggle-btn${toggles.webcam ? ' map-toggle-btn--active' : ''}`}
-          onClick={() => onToggle('webcam')}>
-          Webcam
-        </button>
+      {/* Toggle strip — single scrollable row */}
+      <div className="map-toggles-wrap">
+        <div className="map-toggles">
+          <button className={`map-toggle-btn${toggles.traffic ? ' map-toggle-btn--active' : ''}`}
+            onClick={() => onToggle('traffic')}>
+            {toggles.traffic ? 'Skjul trafikk' : 'Trafikk'}
+          </button>
+          <button className={`map-toggle-btn${toggles.webcam ? ' map-toggle-btn--active' : ''}`}
+            onClick={() => onToggle('webcam')}>
+            Webcam
+          </button>
+          <button className={`map-toggle-btn${toggles.vaer ? ' map-toggle-btn--active' : ''}`}
+            onClick={() => onToggle('vaer')}>
+            Vær
+          </button>
+          <button className={`map-toggle-btn${toggles.fjell ? ' map-toggle-btn--active' : ''}`}
+            onClick={() => onToggle('fjell')}>
+            Fjelloverganger
+          </button>
+          <button className={`map-toggle-btn${toggles.elevation ? ' map-toggle-btn--active' : ''}`}
+            onClick={() => onToggle('elevation')}>
+            Høydekart
+          </button>
+        </div>
       </div>
 
       {toggles.vaer      && <WeatherLegend  offset={false} />}

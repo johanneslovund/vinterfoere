@@ -1,64 +1,63 @@
+/* Risikokart — vertical bar on the right side */
 .legend {
   position: absolute;
-  bottom: 32px;
   right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 800;
   background: rgba(8, 11, 18, 0.58);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  min-width: 155px;
+  border-radius: 10px;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-.legend__title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-  color: rgba(255,255,255,0.3);
-  margin-bottom: 10px;
-}
-
-.legend__gradient {
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(to right, #2196f3, #4caf50, #ffeb3b, #ff9800, #f44336);
-  margin-bottom: 6px;
+.legend__bar {
+  width: 14px;
+  border-radius: 6px;
+  height: 160px;
+  flex-shrink: 0;
+  background: linear-gradient(
+    to bottom,
+    #f44336 0%,
+    #ff9800 33%,
+    #ffeb3b 55%,
+    #4caf50 75%,
+    #2196f3 100%
+  );
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .legend__labels {
   display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: rgba(255,255,255,0.3);
-}
-
-.legend__divider {
-  height: 1px;
-  background: rgba(255,255,255,0.07);
-  margin: 10px 0;
-}
-
-.legend__items {
-  display: flex;
   flex-direction: column;
-  gap: 5px;
+  justify-content: space-between;
+  height: 160px;
 }
 
-.legend__item {
+.legend__label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.65);
+  gap: 5px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.legend__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.legend__tick {
+  width: 5px;
+  height: 1px;
+  background: rgba(255,255,255,0.22);
   flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .legend { right: 8px; }
 }
