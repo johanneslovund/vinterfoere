@@ -77,6 +77,7 @@ export interface MapToggles {
   webcam:    boolean;
   vaer:      boolean;
   elevation: boolean;
+  hazards:   boolean;
 }
 
 interface MapViewProps {
@@ -121,7 +122,7 @@ export function MapView({
         <CanvasHeatmapLayer data={data} />
         {toggles.vaer    && <RainViewerLayer />}
         {toggles.webcam  && <WebcamLayer cameras={webcams} />}
-        <HazardLayer hazards={hazards} />
+        {toggles.hazards && <HazardLayer hazards={hazards} />}
 
         {routeResult && <RouteLayer coordinates={routeResult.coordinates} gridData={data} />}
 
@@ -171,6 +172,10 @@ export function MapView({
           <button className={`map-toggle-btn${toggles.elevation ? ' map-toggle-btn--active' : ''}`}
             onClick={() => onToggle('elevation')}>
             Høydekart
+          </button>
+          <button className={`map-toggle-btn${toggles.hazards ? ' map-toggle-btn--active' : ''}`}
+            onClick={() => onToggle('hazards')}>
+            Farer
           </button>
         </div>
       </div>

@@ -53,6 +53,11 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 }
 .leaflet-control-attribution a { color: var(--accent-ice) !important; }
 
+/* Move zoom controls below the search bar on all devices */
+.leaflet-top.leaflet-left {
+  top: calc(var(--safe-top, 16px) + 62px) !important;
+}
+
 .leaflet-control-zoom { border: none !important; box-shadow: none !important; }
 .leaflet-control-zoom a {
   background: var(--glass-bg) !important;

@@ -30,7 +30,7 @@ export default function App() {
   const { data } = useWeatherGrid();
 
   const [toggles, setToggles] = useState<MapToggles>({
-    traffic: true, webcam: false, vaer: false, elevation: false,
+    traffic: true, webcam: false, vaer: false, elevation: false, hazards: false,
   });
   const [mapStyle,  setMapStyle]  = useState<MapStyle>('dark');
   const [flyTarget, setFlyTarget] = useState<{
