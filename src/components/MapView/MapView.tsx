@@ -23,13 +23,19 @@ function MapClickHandler({ onMapClick }: MapClickProps) {
   return null
 }
 
-interface FlyToProps { target: { lat: number; lon: number } | null }
+interface FlyToProps {
+  target: { lat: number; lon: number; zoom?: number; duration?: number } | null;
+}
 function FlyTo({ target }: FlyToProps) {
   const map = useMap();
   const prev = useRef<typeof target>(null);
   if (target && target !== prev.current) {
     prev.current = target;
-    map.flyTo([target.lat, target.lon], 10, { duration: 1.4 });
+    map.flyTo(
+      [target.lat, target.lon],
+      target.zoom ?? 10,
+      { duration: target.duration ?? 1.4 }
+    );
   }
   return null;
 }
@@ -46,7 +52,7 @@ interface MapViewProps {
   data: GridWeather[];
   toggles: MapToggles;
   onToggle: (key: keyof MapToggles) => void;
-  flyTarget: { lat: number; lon: number } | null;
+  flyTarget: { lat: number; lon: number; zoom?: number; duration?: number } | null;
   routeResult: RouteResult | null;
   onMapClick: (lat: number, lon: number) => void;
   webcams: Webcam[];

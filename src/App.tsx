@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useWeatherGrid } from './hooks/useWeatherGrid';
 import { MapView, MapToggles } from './components/MapView/MapView';
 import { SearchPanel } from './components/SearchBar/SearchBar';
+import { SplashScreen } from './components/SplashScreen/SplashScreen';
 import { RouteReport } from './components/RouteReport/RouteReport';
 import { LocationPanel } from './components/LocationPanel/LocationPanel';
 import { fetchRoute, RouteResult } from './services/routeApi';
@@ -32,7 +33,10 @@ export default function App() {
   });
   const [webcams, setWebcams]         = useState<Webcam[]>([]);
   const webcamsFetched = useRef(false);
-  const [flyTarget, setFlyTarget]       = useState<{ lat: number; lon: number } | null>(null);
+  const [flyTarget, setFlyTarget] = useState<{
+    lat: number; lon: number; zoom?: number; duration?: number
+  } | null>(null);
+  const gpsRef = useRef<[number, number] | null>(null);
   const [routeResult, setRouteResult]     = useState<RouteResult | null>(null);
   const [routeAnalysis, setRouteAnalysis] = useState<RouteAnalysis | null>(null);
   const [routeAnalysisText, setRouteAnalysisText] = useState<string | undefined>(undefined);
@@ -49,6 +53,28 @@ export default function App() {
       fetchWebcams().then(setWebcams).catch(() => {});
     }
   }
+
+  // Start fetching GPS immediately so it's ready when splash fades
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (p) => { gpsRef.current = [p.coords.latitude, p.coords.longitude]; },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  // Called at 3 s when splash background fades — zoom map to GPS
+  const handleSplashReveal = useCallback(() => {
+    const pos = gpsRef.current;
+    if (pos) {
+      setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 13, duration: 3.5 });
+    }
+    // If no GPS yet, zoom in to Norway centre as a fallback animation
+    else {
+      setFlyTarget({ lat: 65.0, lon: 15.0, zoom: 6, duration: 3.5 });
+    }
+  }, []);
 
   const handleGpsRequest = useCallback((): Promise<[number, number] | null> =>
     new Promise(resolve => {
@@ -115,6 +141,8 @@ export default function App() {
 
   return (
     <>
+      <SplashScreen onReveal={handleSplashReveal} />
+
       <SearchPanel
         onRoute={handleRoute}
         onClear={handleClear}
