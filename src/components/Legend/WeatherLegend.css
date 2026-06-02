@@ -1,0 +1,75 @@
+.wx-legend {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 800;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+  background: rgba(8, 11, 20, 0.58);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 14px 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(-6px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+.wx-legend__title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.25);
+  align-self: center;
+  white-space: nowrap;
+}
+
+.wx-legend__bar {
+  width: 14px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.wx-legend__swatch {
+  flex: 1;
+}
+
+.wx-legend__labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.wx-legend__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1;
+  white-space: nowrap;
+  flex: 1;
+  align-items: center;
+}
+
+.wx-legend__tick {
+  width: 5px;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}

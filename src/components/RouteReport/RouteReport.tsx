@@ -1,0 +1,126 @@
+import { RouteAnalysis } from '../../services/routeAnalysis';
+import { RISK_COLORS } from '../../types/weather';
+import { RouteResult } from '../../services/routeApi';
+import { NavLinks } from '../NavLinks/NavLinks';
+import './RouteReport.css';
+
+// Render **bold** markdown in analysis text
+function renderText(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/).map((p, i) =>
+    p.startsWith('**') ? <strong key={i}>{p.slice(2, -2)}</strong> : p
+  )
+}
+
+function fmt(t: number) { return (t > 0 ? '+' : '') + t.toFixed(1) + '°C'; }
+function dur(min: number) {
+  if (min < 60) return `${Math.round(min)} min`;
+  return `${Math.floor(min / 60)}t ${Math.round(min % 60)}min`;
+}
+
+interface Props {
+  analysis: RouteAnalysis;
+  route: RouteResult;
+  routeAnalysisText?: string;
+  fromCoords?: [number, number] | null;
+  toCoords?: [number, number] | null;
+  toName?: string;
+  onClose: () => void;
+}
+
+export function RouteReport({ analysis, route, routeAnalysisText, fromCoords, toCoords, toName, onClose }: Props) {
+  const badgeColor = RISK_COLORS[analysis.overallLevel];
+
+  return (
+    <div className="route-report">
+      <div className="route-report__header">
+        <span className="route-report__title">Rutevurdering</span>
+        <span className="route-report__badge" style={{ background: badgeColor }}>
+          {analysis.overallLabel}
+        </span>
+        <span className="route-report__stats">
+          <strong>{route.distanceKm.toFixed(0)} km</strong>
+          {' · '}
+          <strong>{dur(route.durationMin)}</strong>
+        </span>
+        <button className="route-report__close" onClick={onClose}>×</button>
+      </div>
+
+      <div className="route-report__body">
+        {/* Danger spots */}
+        <div className="route-report__section">
+          <div className="route-report__section-title">Farlige strekninger</div>
+          {analysis.dangerSpots.length === 0 ? (
+            <div className="no-spots">Ingen kritiske strekninger funnet</div>
+          ) : (
+            analysis.dangerSpots.map((s, i) => (
+              <div key={i} className="route-report__spot">
+                <div
+                  className="route-report__spot-dot"
+                  style={{ background: RISK_COLORS[s.level] }}
+                />
+                <span className="route-report__spot-name">{s.name}</span>
+                <span className="route-report__spot-detail">
+                  {fmt(s.airTemperature)} · {s.windSpeed.toFixed(0)} m/s
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Conditions */}
+        <div className="route-report__section">
+          <div className="route-report__section-title">Værforhold</div>
+          <div className="route-report__condition-row">
+            <span className="route-report__condition-icon">🌡</span>
+            Temperatur: {fmt(analysis.tempMin)} til {fmt(analysis.tempMax)}
+          </div>
+          {analysis.hasSnow && (
+            <div className="route-report__condition-row">
+              <span className="route-report__condition-icon">❄</span>
+              Snø langs ruten
+            </div>
+          )}
+          {analysis.hasSleet && (
+            <div className="route-report__condition-row">
+              <span className="route-report__condition-icon">🌨</span>
+              Sludd langs ruten
+            </div>
+          )}
+          {analysis.hasIceRisk && (
+            <div className="route-report__condition-row">
+              <span className="route-report__condition-icon">⚠</span>
+              Isrisiko (temp nær 0 med nedbør)
+            </div>
+          )}
+          {!analysis.hasSnow && !analysis.hasSleet && !analysis.hasIceRisk && (
+            <div className="route-report__condition-row">
+              <span className="route-report__condition-icon">✓</span>
+              Ingen aktiv nedbør langs ruten
+            </div>
+          )}
+        </div>
+
+        {/* Recommendation */}
+        <div className="route-report__recommendation">
+          <strong>Anbefaling</strong>
+          {analysis.recommendation}
+        </div>
+
+        {/* Route AI analysis */}
+        {routeAnalysisText && (
+          <div className="route-report__recommendation" style={{ gridColumn: '1 / -1' }}>
+            <strong>Analyse</strong>
+            <div style={{ marginTop: 4, lineHeight: 1.6 }}>
+              {routeAnalysisText.split('\n').map((line, i) => (
+                <div key={i}>{renderText(line)}</div>
+              ))}
+            </div>
+            {toCoords && (
+              <NavLinks fromCoords={fromCoords} toCoords={toCoords} toName={toName} />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

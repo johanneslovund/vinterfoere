@@ -1,0 +1,30 @@
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 6px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  padding: 5px 13px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  letter-spacing: 0.1px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,0.1);
+  color: #e6edf3;
+  border-color: rgba(255,255,255,0.2);
+}
