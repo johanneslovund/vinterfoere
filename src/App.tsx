@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useWeatherGrid } from './hooks/useWeatherGrid';
 import { MapView, MapToggles } from './components/MapView/MapView';
+import { MapStyle } from './components/MapView/MapStyleSelector';
 import { SearchPanel } from './components/SearchBar/SearchBar';
 import { SplashScreen } from './components/SplashScreen/SplashScreen';
 import { RouteReport } from './components/RouteReport/RouteReport';
@@ -11,12 +12,12 @@ import { fetchTrafficFlow, TrafficFlow } from './services/trafficFlow';
 import { reverseGeocode, nearestWeather } from './services/locationAnalysis';
 import { generateLocalAnalysis, generateRouteAnalysis } from './services/localAnalysis';
 import { fetchWebcams, Webcam } from './services/webcamService';
+import { fetchHazards, Hazard } from './services/hazardService';
 import { GridWeather } from './types/weather';
 import './styles/global.css';
 
 interface PanelState {
-  lat: number
-  lon: number
+  lat: number; lon: number
   locationName: string
   weather: GridWeather | null
   traffic: TrafficFlow | null
@@ -29,33 +30,26 @@ export default function App() {
   const { data } = useWeatherGrid();
 
   const [toggles, setToggles] = useState<MapToggles>({
-    traffic: true, vaer: false, fjell: false, elevation: false, webcam: false,
+    traffic: true, webcam: false, vaer: false, elevation: false,
   });
-  const [webcams, setWebcams]         = useState<Webcam[]>([]);
-  const webcamsFetched = useRef(false);
+  const [mapStyle,  setMapStyle]  = useState<MapStyle>('dark');
   const [flyTarget, setFlyTarget] = useState<{
     lat: number; lon: number; zoom?: number; duration?: number
   } | null>(null);
-  const gpsRef = useRef<[number, number] | null>(null);
-  const [routeResult, setRouteResult]     = useState<RouteResult | null>(null);
-  const [routeAnalysis, setRouteAnalysis] = useState<RouteAnalysis | null>(null);
+  const [routeResult,    setRouteResult]    = useState<RouteResult | null>(null);
+  const [routeAnalysis,  setRouteAnalysis]  = useState<RouteAnalysis | null>(null);
   const [routeAnalysisText, setRouteAnalysisText] = useState<string | undefined>(undefined);
   const [routeFrom, setRouteFrom] = useState<[number,number] | null>(null);
   const [routeTo,   setRouteTo]   = useState<[number,number] | null>(null);
   const [routeToName, setRouteToName] = useState('');
-  const [panel, setPanel]               = useState<PanelState | null>(null);
-  const [pinLocation, setPinLocation]   = useState<{ lat: number; lon: number } | null>(null);
+  const [panel,      setPanel]      = useState<PanelState | null>(null);
+  const [pinLocation, setPinLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [webcams,    setWebcams]    = useState<Webcam[]>([]);
+  const [hazards,    setHazards]    = useState<Hazard[]>([]);
+  const webcamsFetched = useRef(false);
+  const gpsRef         = useRef<[number, number] | null>(null);
 
-  function onToggle(key: keyof MapToggles) {
-    setToggles(t => ({ ...t, [key]: !t[key] }));
-    // Lazy-load cameras on first webcam toggle
-    if (key === 'webcam' && !webcamsFetched.current) {
-      webcamsFetched.current = true;
-      fetchWebcams().then(setWebcams).catch(() => {});
-    }
-  }
-
-  // Start fetching GPS immediately so it's ready when splash fades
+  // Prefetch GPS immediately
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -65,40 +59,50 @@ export default function App() {
     );
   }, []);
 
-  // Called at 3 s when splash background fades — zoom map to GPS
+  // Fetch hazards once on mount
+  useEffect(() => { fetchHazards().then(setHazards).catch(() => {}); }, []);
+
+  // Splash reveal → zoom to GPS
   const handleSplashReveal = useCallback(() => {
     const pos = gpsRef.current;
-    if (pos) {
-      setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 13, duration: 3.5 });
-    }
-    // If no GPS yet, zoom in to Norway centre as a fallback animation
-    else {
-      setFlyTarget({ lat: 65.0, lon: 15.0, zoom: 6, duration: 3.5 });
-    }
+    if (pos) setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 13, duration: 3.5 });
+    else     setFlyTarget({ lat: 65.0, lon: 15.0, zoom: 6, duration: 3.5 });
   }, []);
+
+  function onToggle(key: keyof MapToggles) {
+    setToggles(t => ({ ...t, [key]: !t[key] }));
+    if (key === 'webcam' && !webcamsFetched.current) {
+      webcamsFetched.current = true;
+      fetchWebcams().then(setWebcams).catch(() => {});
+    }
+  }
 
   const handleGpsRequest = useCallback((): Promise<[number, number] | null> =>
     new Promise(resolve => {
+      if (gpsRef.current) { resolve(gpsRef.current); return; }
       if (!navigator.geolocation) { resolve(null); return; }
       navigator.geolocation.getCurrentPosition(
-        p => resolve([p.coords.latitude, p.coords.longitude]),
+        p => { const c: [number,number] = [p.coords.latitude, p.coords.longitude]; gpsRef.current = c; resolve(c); },
         () => resolve(null),
         { enableHighAccuracy: true, timeout: 8000 }
       );
     }), []);
 
-  const handleRoute = useCallback(async (
-    from: [number, number], to: [number, number],
-    fromName = 'Start', toName = 'Mål'
-  ) => {
+  // GPS reset button
+  const handleResetGps = useCallback(async () => {
+    const pos = gpsRef.current ?? await handleGpsRequest();
+    if (pos) setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 13, duration: 1.5 });
+  }, [handleGpsRequest]);
+
+  const handleRoute = useCallback(async (from: [number,number], to: [number,number], fromName = 'Start', toName = 'Mål') => {
     try {
       const result = await fetchRoute(from, to);
       setRouteResult(result);
+      setRouteFrom(from); setRouteTo(to); setRouteToName(toName);
       const mid = result.coordinates[Math.floor(result.coordinates.length / 2)];
       setFlyTarget({ lat: mid[0], lon: mid[1] });
       setRouteAnalysis(analyzeRoute(result.coordinates, data));
       setRouteAnalysisText(generateRouteAnalysis(fromName, toName, data, result.coordinates));
-      setRouteFrom(from); setRouteTo(to); setRouteToName(toName);
     } catch { /* ignore */ }
   }, [data]);
 
@@ -107,79 +111,48 @@ export default function App() {
     setRouteFrom(null); setRouteTo(null); setRouteToName('');
   }, []);
 
-  // Map click → fetch location name, weather, traffic, AI analysis
   const handleMapClick = useCallback(async (lat: number, lon: number) => {
     const wx = nearestWeather(lat, lon, data);
-
     setPinLocation({ lat, lon });
-    // Open panel immediately — analysis is local so no loading delay needed
-    setPanel({
-      lat, lon,
-      locationName: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`,
-      weather: wx,
-      traffic: null,
-      aiText: null,
-      aiError: null,
-      aiLoading: true, // still show skeleton briefly while geocoding + traffic load
-    });
+    setPanel({ lat, lon, locationName: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, weather: wx, traffic: null, aiText: null, aiError: null, aiLoading: true });
 
-    // Fetch location name + traffic in parallel
     const [name, traffic] = await Promise.all([
       reverseGeocode(lat, lon),
       fetchTrafficFlow(lat, lon),
     ]);
 
-    // Generate analysis instantly — no API call needed
     const analysis = generateLocalAnalysis(name, wx, traffic);
-    setPanel(p => p ? {
-      ...p,
-      locationName: name,
-      traffic,
-      aiText: analysis,
-      aiError: null,
-      aiLoading: false,
-    } : null);
+    setPanel(p => p ? { ...p, locationName: name, traffic, aiText: analysis, aiError: null, aiLoading: false } : null);
   }, [data]);
 
   return (
     <>
       <SplashScreen onReveal={handleSplashReveal} />
 
-      <SearchPanel
-        onRoute={handleRoute}
-        onClear={handleClear}
-        onGpsRequest={handleGpsRequest}
-      />
+      <SearchPanel onRoute={handleRoute} onClear={handleClear} onGpsRequest={handleGpsRequest} />
 
       {routeResult && routeAnalysis && (
         <RouteReport
-          analysis={routeAnalysis}
-          route={routeResult}
+          analysis={routeAnalysis} route={routeResult}
           routeAnalysisText={routeAnalysisText}
-          fromCoords={routeFrom}
-          toCoords={routeTo}
-          toName={routeToName}
+          fromCoords={routeFrom} toCoords={routeTo} toName={routeToName}
           onClose={handleClear}
         />
       )}
 
       {panel && (
         <LocationPanel
-          {...panel}
-          aiLoading={panel.aiLoading}
+          {...panel} aiLoading={panel.aiLoading}
           onClose={() => { setPanel(null); setPinLocation(null); }}
         />
       )}
 
       <MapView
-        data={data}
-        toggles={toggles}
-        onToggle={onToggle}
-        flyTarget={flyTarget}
-        routeResult={routeResult}
-        onMapClick={handleMapClick}
-        webcams={webcams}
-        pinLocation={pinLocation}
+        data={data} toggles={toggles} onToggle={onToggle}
+        flyTarget={flyTarget} routeResult={routeResult}
+        onMapClick={handleMapClick} webcams={webcams} hazards={hazards}
+        pinLocation={pinLocation} mapStyle={mapStyle} onMapStyle={setMapStyle}
+        onResetGps={handleResetGps}
       />
     </>
   );

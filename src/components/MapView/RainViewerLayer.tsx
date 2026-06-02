@@ -8,29 +8,25 @@ export function RainViewerLayer() {
 
   const load = useCallback(async () => {
     try {
-      const res  = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+      const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
       if (!res.ok) return;
-      const data = await res.json() as {
-        radar: { past: Array<{ path: string }> };
-      };
+      const data = await res.json() as { radar: { past: Array<{ path: string }> } };
       const frames = data.radar?.past ?? [];
       if (!frames.length) return;
 
       const path = frames[frames.length - 1].path;
       const url  = `https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/6/1_1.png`;
 
-      if (layerRef.current) {
-        map.removeLayer(layerRef.current);
-        layerRef.current = null;
-      }
+      if (layerRef.current) { map.removeLayer(layerRef.current); layerRef.current = null; }
 
       layerRef.current = L.tileLayer(url, {
-        opacity:        0.6,
-        tileSize:       256,
-        minNativeZoom:  2,
-        maxNativeZoom:  12,
-        zIndex:         400,
-        attribution:    'Nedbørradar &copy; <a href="https://www.rainviewer.com">RainViewer</a>',
+        opacity:       0.6,
+        tileSize:      256,
+        minZoom:       3,        // hide layer below zoom 3
+        minNativeZoom: 3,
+        maxNativeZoom: 12,
+        zIndex:        400,
+        attribution:   'Nedbørradar &copy; <a href="https://www.rainviewer.com">RainViewer</a>',
       }).addTo(map);
 
     } catch { /* silent */ }
@@ -41,10 +37,7 @@ export function RainViewerLayer() {
     const id = setInterval(load, 10 * 60 * 1000);
     return () => {
       clearInterval(id);
-      if (layerRef.current) {
-        map.removeLayer(layerRef.current);
-        layerRef.current = null;
-      }
+      if (layerRef.current) { map.removeLayer(layerRef.current); layerRef.current = null; }
     };
   }, [load, map]);
 

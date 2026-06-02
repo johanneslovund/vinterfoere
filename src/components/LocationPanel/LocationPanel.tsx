@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import { GridWeather, riskLevel, RISK_COLORS, RISK_LABELS } from '../../types/weather'
 import { TrafficFlow } from '../../services/trafficFlow'
 import { NavLinks } from '../NavLinks/NavLinks'
@@ -11,7 +12,6 @@ function trafficColor(pct: number): string {
   return '#f44336'
 }
 
-// Render markdown-like bold (**text**) in AI output
 function renderAiText(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/)
   return parts.map((p, i) =>
@@ -20,8 +20,7 @@ function renderAiText(text: string) {
 }
 
 interface Props {
-  lat: number
-  lon: number
+  lat: number; lon: number
   locationName: string
   weather: GridWeather | null
   traffic: TrafficFlow | null
@@ -31,14 +30,37 @@ interface Props {
   onClose: () => void
 }
 
-export function LocationPanel({
-  lat, lon, locationName, weather, traffic,
-  aiText, aiError, aiLoading, onClose
-}: Props) {
+export function LocationPanel({ lat, lon, locationName, weather, traffic, aiText, aiError, aiLoading, onClose }: Props) {
   const level = weather ? riskLevel(weather.riskScore) : null
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // Swipe-down to dismiss
+  useEffect(() => {
+    const el = panelRef.current
+    if (!el) return
+    let startY = 0, startScrollTop = 0
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY
+      startScrollTop = el.scrollTop
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      const dy = e.changedTouches[0].clientY - startY
+      // Only dismiss if swiping down from top of scroll
+      if (dy > 60 && startScrollTop <= 0) onClose()
+    }
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchend',   onTouchEnd,   { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchend',   onTouchEnd)
+    }
+  }, [onClose])
 
   return (
-    <div className="loc-panel">
+    <div className="loc-panel" ref={panelRef}>
+      {/* Drag handle */}
+      <div className="loc-panel__handle" />
+
       {/* Header */}
       <div className="loc-panel__header">
         <span className="loc-panel__name">{locationName}</span>
@@ -62,10 +84,7 @@ export function LocationPanel({
               <div className="loc-panel__stat">🌨 <strong>{weather.precipitationAmount.toFixed(1)} mm</strong></div>
             )}
           </div>
-          <span
-            className="loc-panel__risk-badge"
-            style={{ background: RISK_COLORS[level] }}
-          >
+          <span className="loc-panel__risk-badge" style={{ background: RISK_COLORS[level] }}>
             {RISK_LABELS[level]}
           </span>
         </div>
@@ -76,18 +95,11 @@ export function LocationPanel({
         <div className="loc-panel__traffic">
           <span className="loc-panel__traffic-label">Trafikk</span>
           <div className="loc-panel__traffic-bar">
-            <div
-              className="loc-panel__traffic-fill"
-              style={{
-                width: `${Math.min(100, traffic.congestionPct)}%`,
-                background: trafficColor(traffic.congestionPct),
-              }}
-            />
+            <div className="loc-panel__traffic-fill"
+              style={{ width: `${Math.min(100, traffic.congestionPct)}%`, background: trafficColor(traffic.congestionPct) }} />
           </div>
           <span className="loc-panel__traffic-speed">
-            {traffic.roadClosure
-              ? 'Stengt'
-              : `${traffic.currentSpeed}/${traffic.freeFlowSpeed} km/t`}
+            {traffic.roadClosure ? 'Stengt' : `${traffic.currentSpeed}/${traffic.freeFlowSpeed} km/t`}
           </span>
         </div>
       )}
@@ -113,9 +125,7 @@ export function LocationPanel({
 
         {aiText && !aiLoading && (
           <>
-            <div className="loc-panel__ai-text">
-              {renderAiText(aiText)}
-            </div>
+            <div className="loc-panel__ai-text">{renderAiText(aiText)}</div>
             <NavLinks toCoords={[lat, lon]} toName={locationName} />
           </>
         )}

@@ -7,59 +7,28 @@ import { GridWeather, riskLevel, RISK_COLORS, RISK_LABELS } from '../../types/we
 import { CanvasHeatmapLayer } from './CanvasHeatmapLayer';
 import { TrafficLayer } from './TrafficLayer';
 import { RouteLayer } from './RouteLayer';
-import { MountainPassLayer } from './MountainPassLayer';
 import { RainViewerLayer } from './RainViewerLayer';
 import { ElevationOverlayLayer } from './ElevationOverlayLayer';
 import { WebcamLayer } from './WebcamLayer';
+import { HazardLayer } from './HazardLayer';
 import { Webcam } from '../../services/webcamService';
-import { Legend } from '../Legend/Legend';
+import { Hazard } from '../../services/hazardService';
 import { ElevationLegend } from '../Legend/ElevationLegend';
 import { WeatherLegend } from '../Legend/WeatherLegend';
 import { RouteResult } from '../../services/routeApi';
+import { MapStyleSelector, MapStyle, MAP_TILES } from './MapStyleSelector';
 import './MapView.css';
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 const isTouchDevice = () =>
   typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-interface MapClickProps { onMapClick: (lat: number, lon: number) => void }
-function MapClickHandler({ onMapClick }: MapClickProps) {
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lon: number) => void }) {
   useMapEvents({
-    // Desktop: regular click
-    click(e) {
-      if (!isTouchDevice()) onMapClick(e.latlng.lat, e.latlng.lng);
-    },
-    // Mobile/tablet: long press fires contextmenu in Leaflet
-    contextmenu(e) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
+    click(e)       { if (!isTouchDevice()) onMapClick(e.latlng.lat, e.latlng.lng); },
+    contextmenu(e) { onMapClick(e.latlng.lat, e.latlng.lng); },
   });
-  return null;
-}
-
-// Red pin marker for selected location — uses a custom DivIcon via imperative Leaflet
-function PinMarker({ lat, lon }: { lat: number; lon: number }) {
-  const map   = useMap();
-  const ref   = useRef<L.Marker | null>(null);
-
-  useEffect(() => {
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="
-        width:20px;height:26px;
-        background:linear-gradient(145deg,#ff5555,#cc0000);
-        border-radius:50% 50% 50% 0;
-        transform:rotate(-45deg);
-        box-shadow:0 3px 12px rgba(0,0,0,0.55);
-        border:2px solid rgba(255,255,255,0.7);
-      "></div>`,
-      iconSize:   [20, 26],
-      iconAnchor: [10, 26],
-    });
-    const marker = L.marker([lat, lon], { icon }).addTo(map);
-    ref.current = marker;
-    return () => { marker.remove(); };
-  }, [lat, lon, map]);
-
   return null;
 }
 
@@ -67,57 +36,94 @@ interface FlyToProps {
   target: { lat: number; lon: number; zoom?: number; duration?: number } | null;
 }
 function FlyTo({ target }: FlyToProps) {
-  const map = useMap();
+  const map  = useMap();
   const prev = useRef<typeof target>(null);
   if (target && target !== prev.current) {
     prev.current = target;
-    map.flyTo(
-      [target.lat, target.lon],
-      target.zoom ?? 10,
-      { duration: target.duration ?? 1.4 }
-    );
+    map.flyTo([target.lat, target.lon], target.zoom ?? 10, { duration: target.duration ?? 1.4 });
   }
   return null;
 }
 
+// Better red pin using SVG
+function PinMarker({ lat, lon }: { lat: number; lon: number }) {
+  const map = useMap();
+  const ref = useRef<L.Marker | null>(null);
+
+  useEffect(() => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<svg width="28" height="38" viewBox="0 0 28 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 0C6.268 0 0 6.268 0 14c0 9.333 14 24 14 24s14-14.667 14-24C28 6.268 21.732 0 14 0z"
+          fill="#E53935" stroke="white" stroke-width="2"/>
+        <circle cx="14" cy="14" r="5" fill="white"/>
+      </svg>`,
+      iconSize:    [28, 38],
+      iconAnchor:  [14, 38],
+      popupAnchor: [0, -38],
+    });
+    const marker = L.marker([lat, lon], { icon, zIndexOffset: 1000 }).addTo(map);
+    ref.current = marker;
+    return () => { marker.remove(); };
+  }, [lat, lon, map]);
+
+  return null;
+}
+
+// ── types ─────────────────────────────────────────────────────────────────────
+
 export interface MapToggles {
-  traffic: boolean;
-  vaer: boolean;
-  fjell: boolean;
+  traffic:   boolean;
+  webcam:    boolean;
+  vaer:      boolean;
   elevation: boolean;
-  webcam: boolean;
 }
 
 interface MapViewProps {
-  data: GridWeather[];
-  toggles: MapToggles;
-  onToggle: (key: keyof MapToggles) => void;
-  flyTarget: { lat: number; lon: number; zoom?: number; duration?: number } | null;
-  routeResult: RouteResult | null;
-  onMapClick: (lat: number, lon: number) => void;
-  webcams: Webcam[];
-  pinLocation: { lat: number; lon: number } | null;
+  data:          GridWeather[];
+  toggles:       MapToggles;
+  onToggle:      (key: keyof MapToggles) => void;
+  flyTarget:     { lat: number; lon: number; zoom?: number; duration?: number } | null;
+  routeResult:   RouteResult | null;
+  onMapClick:    (lat: number, lon: number) => void;
+  webcams:       Webcam[];
+  hazards:       Hazard[];
+  pinLocation:   { lat: number; lon: number } | null;
+  mapStyle:      MapStyle;
+  onMapStyle:    (s: MapStyle) => void;
+  onResetGps:    () => void;
 }
 
-export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMapClick, webcams, pinLocation }: MapViewProps) {
+// ── component ─────────────────────────────────────────────────────────────────
+
+export function MapView({
+  data, toggles, onToggle, flyTarget, routeResult,
+  onMapClick, webcams, hazards, pinLocation,
+  mapStyle, onMapStyle, onResetGps,
+}: MapViewProps) {
+  const tiles = MAP_TILES[mapStyle];
+
   return (
     <div className="map-container">
       <MapContainer center={[65.0, 15.0]} zoom={5}
         style={{ height: '100%', width: '100%' }} zoomControl>
         <MapClickHandler onMapClick={onMapClick} />
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          maxZoom={19} subdomains="abcd"
+          key={mapStyle}
+          url={tiles.url}
+          attribution={tiles.attribution}
+          maxZoom={19}
+          subdomains="abcd"
         />
 
         {toggles.elevation && <ElevationOverlayLayer data={data} />}
         <TrafficLayer visible={toggles.traffic} />
         <CanvasHeatmapLayer data={data} />
-        {toggles.vaer  && <RainViewerLayer />}
-        {toggles.fjell  && <MountainPassLayer gridData={data} />}
-        {toggles.webcam && <WebcamLayer cameras={webcams} />}
-{routeResult && <RouteLayer coordinates={routeResult.coordinates} gridData={data} />}
+        {toggles.vaer    && <RainViewerLayer />}
+        {toggles.webcam  && <WebcamLayer cameras={webcams} />}
+        <HazardLayer hazards={hazards} />
+
+        {routeResult && <RouteLayer coordinates={routeResult.coordinates} gridData={data} />}
 
         {data.map((w) => {
           const level = riskLevel(w.riskScore);
@@ -139,7 +145,15 @@ export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMap
         <FlyTo target={flyTarget} />
       </MapContainer>
 
-      {/* Toggle strip — single scrollable row */}
+      {/* Map style selector — top right */}
+      <MapStyleSelector value={mapStyle} onChange={onMapStyle} />
+
+      {/* GPS reset button — bottom right above toggles */}
+      <button className="map-reset-btn" onClick={onResetGps} title="Gå til min posisjon">
+        ◎
+      </button>
+
+      {/* Toggle strip */}
       <div className="map-toggles-wrap">
         <div className="map-toggles">
           <button className={`map-toggle-btn${toggles.traffic ? ' map-toggle-btn--active' : ''}`}
@@ -154,10 +168,6 @@ export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMap
             onClick={() => onToggle('vaer')}>
             Vær
           </button>
-          <button className={`map-toggle-btn${toggles.fjell ? ' map-toggle-btn--active' : ''}`}
-            onClick={() => onToggle('fjell')}>
-            Fjelloverganger
-          </button>
           <button className={`map-toggle-btn${toggles.elevation ? ' map-toggle-btn--active' : ''}`}
             onClick={() => onToggle('elevation')}>
             Høydekart
@@ -167,7 +177,6 @@ export function MapView({ data, toggles, onToggle, flyTarget, routeResult, onMap
 
       {toggles.vaer      && <WeatherLegend  offset={false} />}
       {toggles.elevation && <ElevationLegend offset={toggles.vaer} />}
-      <Legend />
     </div>
   );
 }

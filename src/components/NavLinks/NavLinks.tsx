@@ -22,10 +22,10 @@ export function NavLinks({ fromCoords, toCoords, toName }: NavLinksProps) {
     `https://www.tesla.com/_ak/www.tesla.com/api/tesla-navigation` +
     `?destination=${tLat},${tLon}&name=${name}`;
 
+  void teslaUrl; // removed per user request
   const links = [
-    { label: 'Google Maps',   url: googleUrl },
-    { label: 'Apple Maps',    url: appleUrl  },
-    { label: 'Send til Tesla', url: teslaUrl  },
+    { label: 'Google Maps', url: googleUrl },
+    { label: 'Apple Maps',  url: appleUrl  },
   ];
 
   return (

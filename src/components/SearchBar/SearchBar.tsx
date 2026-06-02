@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { searchLocations, GeoResult } from '../../services/geocodeApi';
 import './SearchBar.css';
 
+// ── shared address-search hook ────────────────────────────────────────────────
 function useAddressSearch() {
   const [query, setQuery]     = useState('');
   const [results, setResults] = useState<GeoResult[]>([]);
@@ -26,41 +27,52 @@ function useAddressSearch() {
   return { query, setQuery, results, loading, open, setOpen, clear };
 }
 
+// ── props ─────────────────────────────────────────────────────────────────────
 interface SearchPanelProps {
   onRoute: (from: [number, number], to: [number, number], fromName: string, toName: string) => void;
   onClear: () => void;
   onGpsRequest: () => Promise<[number, number] | null>;
 }
 
+// ── component ─────────────────────────────────────────────────────────────────
 export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps) {
-  const from = useAddressSearch();
-  const to   = useAddressSearch();
+  const dest = useAddressSearch();                   // Phase 1 — destination search
+  const from = useAddressSearch();                   // Phase 2 — start point search
 
+  const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
   const [fromCoords, setFromCoords] = useState<[number, number] | null>(null);
-  const [toCoords,   setToCoords]   = useState<[number, number] | null>(null);
   const [fromGps,    setFromGps]    = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [routing,    setRouting]    = useState(false);
 
-  const hasContent = !!(from.query || to.query || fromCoords || toCoords);
+  const pillRef  = useRef<HTMLDivElement>(null);
+  const fromRef  = useRef<HTMLDivElement>(null);
 
-  function clearAll() {
-    setFromGps(false); setFromCoords(null); from.clear();
-    setToCoords(null); to.clear();
-    onClear();
-  }
+  // Phase: 'pill' = single search bar, 'expanded' = full route panel
+  const phase = destCoords ? 'expanded' : 'pill';
 
-  const fromRef = useRef<HTMLDivElement>(null);
-  const toRef   = useRef<HTMLDivElement>(null);
-
+  // Close dropdowns on outside click
   useEffect(() => {
     function h(e: MouseEvent) {
+      if (pillRef.current && !pillRef.current.contains(e.target as Node)) dest.setOpen(false);
       if (fromRef.current && !fromRef.current.contains(e.target as Node)) from.setOpen(false);
-      if (toRef.current   && !toRef.current.contains(e.target as Node))   to.setOpen(false);
     }
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
-  }, [from, to]);
+  }, [dest, from]);
+
+  function selectDest(r: GeoResult) {
+    dest.setQuery(r.shortName);
+    dest.setOpen(false);
+    setDestCoords([r.lat, r.lon]);
+  }
+
+  function selectFrom(r: GeoResult) {
+    from.setQuery(r.shortName);
+    from.setOpen(false);
+    setFromCoords([r.lat, r.lon]);
+    setFromGps(false);
+  }
 
   async function handleGps() {
     setGpsLoading(true);
@@ -69,49 +81,100 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
     if (c) { setFromGps(true); setFromCoords(c); from.setQuery('Min posisjon'); }
   }
 
-  function selectFrom(r: GeoResult) {
-    setFromGps(false); setFromCoords([r.lat, r.lon]);
-    from.setQuery(r.shortName); from.setOpen(false);
-  }
-  function selectTo(r: GeoResult) {
-    setToCoords([r.lat, r.lon]); to.setQuery(r.shortName); to.setOpen(false);
-  }
-
-  function clearFrom() {
-    setFromGps(false); setFromCoords(null); from.clear(); onClear();
-  }
-  function clearTo() {
-    setToCoords(null); to.clear(); onClear();
-  }
-
   async function handleRoute() {
-    let startCoords = fromCoords;
-    if (!startCoords) {
+    if (!destCoords) return;
+    let start = fromCoords;
+    if (!start) {
       setGpsLoading(true);
       const gps = await onGpsRequest();
       setGpsLoading(false);
       if (!gps) return;
-      startCoords = gps;
+      start = gps;
       setFromGps(true); setFromCoords(gps); from.setQuery('Min posisjon');
     }
-    if (!toCoords) return;
     setRouting(true);
-    const fName = fromGps ? 'Min posisjon' : (from.query || 'Start');
-    await onRoute(startCoords, toCoords, fName, to.query || 'Mål');
+    await onRoute(start, destCoords, fromGps ? 'Min posisjon' : (from.query || 'Start'), dest.query);
     setRouting(false);
   }
 
-  const canRoute = !!toCoords;
+  function clearAll() {
+    dest.clear(); from.clear();
+    setDestCoords(null); setFromCoords(null); setFromGps(false);
+    onClear();
+  }
 
+  // ── Phase 1: single pill ────────────────────────────────────────────────────
+  if (phase === 'pill') {
+    return (
+      <div className="search-pill-wrap" ref={pillRef}>
+        <div className="search-pill">
+          <span className="search-pill__icon">⌕</span>
+          <input
+            className="search-pill__input"
+            type="text"
+            placeholder="Søk her"
+            value={dest.query}
+            onChange={(e) => { dest.setQuery(e.target.value); }}
+            onFocus={() => dest.results.length > 0 && dest.setOpen(true)}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {dest.query && (
+            <button className="search-pill__clear" onClick={() => dest.clear()}>×</button>
+          )}
+        </div>
+
+        {dest.open && (
+          <div className="search-dropdown" style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0 }}>
+            {dest.loading
+              ? <div className="search-dropdown__loading">Søker…</div>
+              : dest.results.map((r, i) => (
+                  <div key={i} className="search-dropdown__item" onMouseDown={() => selectDest(r)}>
+                    <div className="search-dropdown__main">{r.shortName}</div>
+                    <div className="search-dropdown__sub">{r.displayName}</div>
+                  </div>
+                ))
+            }
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Phase 2: expanded panel (destination set) ───────────────────────────────
   return (
     <div className="search-panel">
-      {/* FROM */}
+      {/* Destination row — always filled */}
+      <div className="search-field" style={{ borderColor: 'rgba(137,207,240,0.3)' }}>
+        <span className="search-field__label">Til</span>
+        <span className="search-field__sep" />
+        <input
+          className="search-field__input"
+          value={dest.query}
+          onChange={(e) => { dest.setQuery(e.target.value); if (!e.target.value) { setDestCoords(null); onClear(); } }}
+          onFocus={() => dest.results.length > 0 && dest.setOpen(true)}
+          autoComplete="off" spellCheck={false}
+          style={{ color: '#89cff0' }}
+        />
+        {dest.open && (
+          <div className="search-dropdown">
+            {dest.results.map((r, i) => (
+              <div key={i} className="search-dropdown__item" onMouseDown={() => selectDest(r)}>
+                <div className="search-dropdown__main">{r.shortName}</div>
+                <div className="search-dropdown__sub">{r.displayName}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Start row */}
       <div className="search-field" ref={fromRef}>
         <span className="search-field__label">Fra</span>
         <span className="search-field__sep" />
         <input
           className="search-field__input"
-          placeholder={fromGps ? '' : 'Startsted…'}
+          placeholder="Startsted…"
           value={from.query}
           onChange={(e) => { setFromCoords(null); setFromGps(false); from.setQuery(e.target.value); }}
           onFocus={() => from.results.length > 0 && from.setOpen(true)}
@@ -119,12 +182,12 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
           style={fromGps ? { color: '#89cff0' } : undefined}
         />
         {from.query
-          ? <button className="search-field__clear" onClick={clearFrom}>×</button>
+          ? <button className="search-field__clear" onClick={() => { setFromGps(false); setFromCoords(null); from.clear(); }}>×</button>
           : <button className="search-field__gps" onClick={handleGps} disabled={gpsLoading}>
               {gpsLoading ? '…' : 'GPS'}
             </button>
         }
-        {from.open && !fromGps && (
+        {from.open && (
           <div className="search-dropdown">
             {from.loading
               ? <div className="search-dropdown__loading">Søker…</div>
@@ -139,44 +202,13 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
         )}
       </div>
 
-      <span className="search-arrow">›</span>
-
-      {/* TO */}
-      <div className="search-field" ref={toRef}>
-        <span className="search-field__label">Til</span>
-        <span className="search-field__sep" />
-        <input
-          className="search-field__input"
-          placeholder="Søk sted eller vei…"
-          value={to.query}
-          onChange={(e) => { setToCoords(null); to.setQuery(e.target.value); }}
-          onFocus={() => to.results.length > 0 && to.setOpen(true)}
-          autoComplete="off" spellCheck={false}
-        />
-        {to.query && <button className="search-field__clear" onClick={clearTo}>×</button>}
-        {to.open && (
-          <div className="search-dropdown">
-            {to.loading
-              ? <div className="search-dropdown__loading">Søker…</div>
-              : to.results.map((r, i) => (
-                  <div key={i} className="search-dropdown__item" onMouseDown={() => selectTo(r)}>
-                    <div className="search-dropdown__main">{r.shortName}</div>
-                    <div className="search-dropdown__sub">{r.displayName}</div>
-                  </div>
-                ))
-            }
-          </div>
-        )}
-      </div>
-
-      <button className="search-go" onClick={handleRoute} disabled={!canRoute || routing}>
-        {routing ? '…' : 'Beregn rute'}
-      </button>
-
-      {hasContent && (
+      {/* Actions */}
+      <div className="search-actions">
+        <button className="search-go" onClick={handleRoute} disabled={routing}>
+          {routing ? 'Beregner…' : 'Beregn rute'}
+        </button>
         <button className="search-close" onClick={clearAll} title="Tøm søk">×</button>
-      )}
-
+      </div>
     </div>
   );
 }
