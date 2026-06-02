@@ -184,7 +184,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
         {from.query
           ? <button className="search-field__clear" onClick={() => { setFromGps(false); setFromCoords(null); from.clear(); }}>×</button>
           : <button className="search-field__gps" onClick={handleGps} disabled={gpsLoading}>
-              {gpsLoading ? '…' : 'GPS'}
+              {gpsLoading ? '…' : 'Min Posisjon'}
             </button>
         }
         {from.open && (

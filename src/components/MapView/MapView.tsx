@@ -11,6 +11,7 @@ import { RainViewerLayer } from './RainViewerLayer';
 import { ElevationOverlayLayer } from './ElevationOverlayLayer';
 import { WebcamLayer } from './WebcamLayer';
 import { HazardLayer } from './HazardLayer';
+import { UserLocationLayer } from './UserLocationLayer';
 import { Webcam } from '../../services/webcamService';
 import { Hazard } from '../../services/hazardService';
 import { ElevationLegend } from '../Legend/ElevationLegend';
@@ -109,6 +110,7 @@ export function MapView({
       <MapContainer center={[65.0, 15.0]} zoom={5}
         style={{ height: '100%', width: '100%' }} zoomControl>
         <MapClickHandler onMapClick={onMapClick} />
+        <UserLocationLayer />
         <TileLayer
           key={mapStyle}
           url={tiles.url}
