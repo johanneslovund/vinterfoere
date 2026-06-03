@@ -4,7 +4,6 @@ import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GridWeather } from '../../types/weather';
-import { CanvasHeatmapLayer } from './CanvasHeatmapLayer';
 import { TrafficLayer } from './TrafficLayer';
 import { RouteLayer } from './RouteLayer';
 import { RainViewerLayer } from './RainViewerLayer';
@@ -131,8 +130,7 @@ export function MapView({
 
         {toggles.elevation && <ElevationOverlayLayer data={data} />}
         <TrafficLayer visible={toggles.traffic} />
-        <CanvasHeatmapLayer data={data} />
-        {toggles.vaer    && <RainViewerLayer />}
+{toggles.vaer    && <RainViewerLayer />}
         {toggles.webcam  && <WebcamLayer cameras={webcams} />}
         {toggles.hazards && <HazardLayer hazards={hazards} />}
 
