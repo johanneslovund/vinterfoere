@@ -20,6 +20,7 @@ import { ElevationLegend } from '../Legend/ElevationLegend';
 import { WeatherLegend } from '../Legend/WeatherLegend';
 import { RouteResult } from '../../services/routeApi';
 import { MapStyleSelector, MapStyle, MAP_TILES } from './MapStyleSelector';
+import { CompassButton } from './CompassButton';
 import './MapView.css';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -98,6 +99,9 @@ interface MapViewProps {
   mapStyle:         MapStyle;
   onMapStyle:       (s: MapStyle) => void;
   onResetGps:       () => void;
+  compassBearing?:  number | null;
+  lockMode?:        'north' | 'heading';
+  onToggleLock?:    () => void;
   navSteps?:         RouteStep[];
   navInfo?:          NavInfo | null;
   onNavInfo?:        (info: NavInfo) => void;
@@ -112,6 +116,7 @@ export function MapView({
   data, toggles, onToggle, flyTarget, routeResult,
   onMapClick, onSelectAlt, webcams, hazards, pinLocation,
   mapStyle, onMapStyle, onResetGps,
+  compassBearing, lockMode = 'north', onToggleLock,
   navSteps, navInfo, onNavInfo, onStopNavigation, navFerries, routeStartTime,
 }: MapViewProps) {
   const tiles = MAP_TILES[mapStyle];
@@ -119,9 +124,15 @@ export function MapView({
   return (
     <div className="map-container">
       <MapContainer center={[65.0, 15.0]} zoom={5}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {...{ rotate: true, touchRotate: true } as any}
         style={{ height: '100%', width: '100%' }} zoomControl>
         <MapClickHandler onMapClick={onMapClick} />
         <UserLocationLayer />
+        {/* Compass — inside MapContainer to access useMap() */}
+        {onToggleLock && (
+          <CompassButton bearing={compassBearing ?? null} lockMode={lockMode} onToggle={onToggleLock} />
+        )}
         <TileLayer
           key={mapStyle}
           url={tiles.url}

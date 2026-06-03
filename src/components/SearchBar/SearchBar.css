@@ -298,3 +298,73 @@
   display: block;
   margin-bottom: 1px;
 }
+
+/* ── Navigation status bar (replaces search bar when navigating) ─ */
+.nav-status-bar {
+  position: fixed;
+  top: var(--safe-top, 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 960;
+  width: min(560px, calc(100vw - 24px));
+  background: rgba(8,11,20,0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--glass-shadow);
+}
+
+.nav-status-bar__dest {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-status-bar__sep {
+  width: 1px; height: 18px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.nav-status-bar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.nav-status-bar__val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.nav-status-bar__lbl {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.nav-status-bar__stop {
+  background: rgba(244,67,54,0.15);
+  border: 1px solid rgba(244,67,54,0.3);
+  border-radius: 8px;
+  color: #ef9a9a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+.nav-status-bar__stop:hover { background: rgba(244,67,54,0.25); }

@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import L from 'leaflet';
-// leaflet.heat is a legacy global plugin — expose L before it loads
 (window as unknown as Record<string, unknown>).L = L;
+import 'leaflet-rotate';   // patches L.Map with setBearing / touchRotate
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

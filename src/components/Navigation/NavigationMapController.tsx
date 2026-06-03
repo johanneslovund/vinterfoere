@@ -97,6 +97,21 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
           }
         }
 
+        // ── Dynamic zoom based on distance to next maneuver ─────────────────
+        const distToNext = steps[stepIdx]?.distance ?? remDist;
+        let targetZoom: number;
+        if (distToNext < 80)         targetZoom = 18;   // tight turn approaching
+        else if (distToNext < 200)   targetZoom = 17;
+        else if (distToNext < 600)   targetZoom = 16;
+        else if (distToNext < 3000)  targetZoom = 15;
+        else if (distToNext < 10000) targetZoom = 14;
+        else                         targetZoom = 13;   // motorway / long stretch
+
+        const curZoom = map.getZoom();
+        if (Math.abs(curZoom - targetZoom) >= 1 && userIdleMs > 6000) {
+          map.setZoom(targetZoom, { animate: true })
+        }
+
         // Auto-end on arrival
         if (stepIdx >= steps.length - 2 && remDist < 50) onArrive()
       },

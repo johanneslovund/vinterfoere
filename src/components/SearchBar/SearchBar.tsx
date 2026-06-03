@@ -319,15 +319,42 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest, voiceContext }: Se
   );
 }
 
-// ── Navigation destination pill ───────────────────────────────────────────────
-export function NavDestPill({ destination }: { destination: string }) {
+// ── Navigation status bar (replaces both search bar AND NavDestPill) ──────────
+interface NavStatusBarProps {
+  destination: string;
+  remainDist?: number;
+  remainMin?: number;
+  eta?: string;
+  onStop: () => void;
+}
+
+export function NavStatusBar({ destination, remainDist, remainMin, eta, onStop }: NavStatusBarProps) {
+  const fmtDist = (m: number) => m >= 1000 ? `${(m/1000).toFixed(0)} km` : `${Math.round(m)} m`;
+  const fmtTime = (min: number) => {
+    if (!min) return '--';
+    if (min < 60) return `${Math.round(min)} min`;
+    return `${Math.floor(min/60)}t ${Math.round(min%60)}m`;
+  };
+
   return (
-    <div className="nav-dest-pill">
-      <span className="nav-dest-pill__icon">◎</span>
-      <div className="nav-dest-pill__text">
-        <span className="nav-dest-pill__label">Navigerer til</span>
-        {destination}
+    <div className="nav-status-bar">
+      <div className="nav-status-bar__dest">{destination || 'Navigerer…'}</div>
+      <div className="nav-status-bar__sep" />
+      <div className="nav-status-bar__item">
+        <span className="nav-status-bar__val">{remainDist ? fmtDist(remainDist) : '--'}</span>
+        <span className="nav-status-bar__lbl">Igjen</span>
       </div>
+      <div className="nav-status-bar__sep" />
+      <div className="nav-status-bar__item">
+        <span className="nav-status-bar__val">{fmtTime(remainMin ?? 0)}</span>
+        <span className="nav-status-bar__lbl">Tid</span>
+      </div>
+      <div className="nav-status-bar__sep" />
+      <div className="nav-status-bar__item">
+        <span className="nav-status-bar__val">{eta || '--:--'}</span>
+        <span className="nav-status-bar__lbl">ETA</span>
+      </div>
+      <button className="nav-status-bar__stop" onClick={onStop}>Stopp</button>
     </div>
   );
 }

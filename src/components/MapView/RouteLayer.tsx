@@ -13,23 +13,34 @@ export function RouteLayer({ coordinates, alternates, onSelectAlt }: RouteLayerP
 
   return (
     <>
-      {/* Alternate routes — grey dashed, tappable to select */}
+      {/* Alternate routes — solid, lower opacity, wide invisible click zone */}
       {alternates?.map((alt, i) => (
-        <Polyline key={`alt-${i}`}
-          positions={alt.coordinates}
-          pathOptions={{ color: '#78909c', weight: 5, opacity: 0.5, dashArray: '8 5' }}
-          eventHandlers={{ click: () => onSelectAlt?.(alt) }}
-        />
+        <React.Fragment key={`alt-${i}`}>
+          {/* Invisible thick hit area for easy tap */}
+          <Polyline positions={alt.coordinates}
+            pathOptions={{ color: 'transparent', weight: 18, opacity: 0 }}
+            eventHandlers={{ click: () => onSelectAlt?.(alt) }}
+          />
+          {/* Visual line */}
+          <Polyline positions={alt.coordinates}
+            pathOptions={{ color: '#546e7a', weight: 5, opacity: 0.5 }}
+            eventHandlers={{ click: () => onSelectAlt?.(alt) }}
+          />
+        </React.Fragment>
       ))}
+
       {/* Active route shadow */}
       <Polyline positions={coordinates}
         pathOptions={{ color: '#000', weight: 10, opacity: 0.28 }} />
-      {/* Active route — FerdPilot brand blue matching logo */}
+      {/* Active route — FerdPilot brand blue */}
       <Polyline positions={coordinates}
         pathOptions={{ color: '#1a6bb5', weight: 6, opacity: 0.95 }} />
       {/* Inner highlight */}
       <Polyline positions={coordinates}
-        pathOptions={{ color: '#89cff0', weight: 2, opacity: 0.55 }} />
+        pathOptions={{ color: '#89cff0', weight: 2, opacity: 0.45 }} />
     </>
   );
 }
+
+// Need React.Fragment
+import React from 'react';

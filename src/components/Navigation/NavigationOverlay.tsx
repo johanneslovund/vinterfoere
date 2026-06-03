@@ -17,7 +17,8 @@ interface Props {
   onStop:          () => void
 }
 
-export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTime, onStop }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTime, onStop: _onStop }: Props) {
   const [ferrySkips, setFerrySkips] = useState<number[]>([]);
   const ferryIdx = 0;
   // Live clock — updates every 20s so ferry bar stays current
@@ -66,7 +67,7 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
             {step?.instruction ?? 'Beregner…'}
           </div>
         </div>
-        <button className="nav-instruction__stop" onClick={onStop}>Stopp</button>
+        {/* Stop button now in NavStatusBar */}
       </div>
 
       {/* Ferry progress line */}

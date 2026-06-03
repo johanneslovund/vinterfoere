@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useWeatherGrid } from './hooks/useWeatherGrid';
 import { MapView, MapToggles } from './components/MapView/MapView';
 import { MapStyle } from './components/MapView/MapStyleSelector';
-import { SearchPanel, NavDestPill } from './components/SearchBar/SearchBar';
+import { SearchPanel, NavStatusBar } from './components/SearchBar/SearchBar';
 import { SplashScreen } from './components/SplashScreen/SplashScreen';
 import { RouteReport } from './components/RouteReport/RouteReport';
 import { LocationPanel } from './components/LocationPanel/LocationPanel';
@@ -42,7 +42,8 @@ export default function App() {
     document.documentElement.setAttribute('data-mode', mapStyle);
   }, [mapStyle]);
 
-  const [navInfo, setNavInfo] = useState<import('./components/Navigation/NavigationMapController').NavInfo | null>(null);
+  const [navInfo,    setNavInfo]    = useState<import('./components/Navigation/NavigationMapController').NavInfo | null>(null);
+  const [lockMode,   setLockMode]   = useState<'north'|'heading'>('north');
   const [flyTarget, setFlyTarget] = useState<{
     lat: number; lon: number; zoom?: number; duration?: number
   } | null>(null);
@@ -155,7 +156,16 @@ export default function App() {
       <SplashScreen onReveal={handleSplashReveal} />
 
       {navigating
-        ? <NavDestPill destination={routeToName || 'Destinasjon'} />
+        ? <NavStatusBar
+            destination={routeToName || 'Destinasjon'}
+            remainDist={navInfo?.remainDist}
+            remainMin={navInfo?.remainMin}
+            eta={navInfo?.eta}
+            onStop={() => {
+              setNavigating(false); setLockMode('north');
+              handleClear(); setToggles(t => ({ ...t, traffic: false }));
+            }}
+          />
         : <SearchPanel
             onRoute={handleRoute}
             onClear={handleClear}
@@ -172,7 +182,8 @@ export default function App() {
           routeStartTime={routeStartTime}
           onNavigate={() => {
             setNavigating(true);
-            setToggles(t => ({ ...t, traffic: true })); // enable traffic on nav start
+            setLockMode('heading');  // follow user direction when nav starts
+            setToggles(t => ({ ...t, traffic: true }));
             const pos = gpsRef.current;
             if (pos) setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 16, duration: 1 });
           }}
@@ -202,23 +213,28 @@ export default function App() {
         flyTarget={flyTarget} routeResult={routeResult}
         onMapClick={handleMapClick}
         onSelectAlt={(alt: AlternateRoute) => {
-          // Swap active route to selected alternate
-          if (routeResult) {
-            setRouteResult({ ...routeResult, coordinates: alt.coordinates, distanceKm: alt.distanceKm, durationMin: alt.durationMin });
-          }
+          if (!routeResult) return;
+          // The previously active route becomes an alternate; the selected becomes active
+          const prevActive: AlternateRoute = { coordinates: routeResult.coordinates, distanceKm: routeResult.distanceKm, durationMin: routeResult.durationMin };
+          const newAlternates = [prevActive, ...routeResult.alternates.filter(a => a.coordinates !== alt.coordinates)];
+          setRouteResult({ ...routeResult, coordinates: alt.coordinates, distanceKm: alt.distanceKm, durationMin: alt.durationMin, alternates: newAlternates });
         }}
         webcams={webcams} hazards={hazards}
         pinLocation={pinLocation} mapStyle={mapStyle}
         onMapStyle={(s) => { setMapStyle(s); localStorage.setItem('vf-mapStyle', s); }}
         navInfo={navInfo} onNavInfo={setNavInfo}
+        compassBearing={navInfo?.bearing ?? null}
+        lockMode={lockMode}
+        onToggleLock={() => setLockMode(m => m === 'north' ? 'heading' : 'north')}
         onResetGps={handleResetGps}
         navSteps={navigating && routeResult ? routeResult.steps : undefined}
         navFerries={navigating ? ferryAnalyses : undefined}
         routeStartTime={routeStartTime}
         onStopNavigation={() => {
           setNavigating(false);
-          handleClear();                            // clear route → search pill resets
-          setToggles(t => ({ ...t, traffic: false })); // turn traffic off again
+          setLockMode('north');   // back to north-up when nav stops
+          handleClear();
+          setToggles(t => ({ ...t, traffic: false }));
         }}
       />
     </>

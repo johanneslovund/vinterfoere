@@ -51,26 +51,20 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 
 .leaflet-container { background: var(--app-bg); }
 
-.leaflet-control-attribution {
-  background: rgba(6, 10, 16, 0.6) !important;
-  backdrop-filter: blur(8px) !important;
-  color: var(--text-muted) !important;
-  font-size: 10px !important;
-  border-top: 1px solid var(--glass-border) !important;
-}
-.leaflet-control-attribution a { color: var(--accent-ice) !important; }
+/* Hide attribution completely */
+.leaflet-control-attribution { display: none !important; }
 
 /* Move zoom controls below the search bar on all devices */
 .leaflet-top.leaflet-left {
   top: calc(var(--safe-top, 16px) + 62px) !important;
 }
 
-/* During navigation: move to bottom-right so they don't overlap the nav overlay */
+/* During navigation: move to bottom-LEFT (reset button is bottom-right) */
 .is-navigating .leaflet-top.leaflet-left {
   top:    auto !important;
-  bottom: calc(var(--safe-bottom, 0px) + 108px) !important;
-  left:   auto !important;
-  right:  14px !important;
+  bottom: calc(var(--safe-bottom, 0px) + 104px) !important;
+  left:   14px !important;
+  right:  auto !important;
 }
 
 .leaflet-control-zoom { border: none !important; box-shadow: none !important; }
