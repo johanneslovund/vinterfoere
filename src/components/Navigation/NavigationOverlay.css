@@ -1,7 +1,6 @@
-/* ── Navigation header (replaces search bar) ─────────── */
+/* ── Nav overlay — positioned below NavStatusBar ─────── */
 .nav-overlay {
   position: fixed;
-  /* NavDestPill ~48px tall + 6px gap below it */
   top: calc(var(--safe-top, 16px) + 54px);
   left: 50%;
   transform: translateX(-50%);
@@ -13,31 +12,26 @@
   pointer-events: none;
 }
 
+/* ── Block 1: Instruction ────────────────────────────── */
 .nav-instruction {
-  background: rgba(8, 11, 20, 0.88);
+  background: rgba(8,11,20,0.78);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 14px 18px;
+  border-radius: 14px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  gap: 12px;
   pointer-events: all;
-  animation: navSlideIn 0.25s ease;
-}
-
-@keyframes navSlideIn {
-  from { opacity:0; transform:translateY(-8px); }
-  to   { opacity:1; transform:translateY(0); }
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 
 .nav-instruction__arrow {
-  font-size: 32px;
+  font-size: 28px;
   line-height: 1;
   flex-shrink: 0;
-  min-width: 40px;
+  min-width: 36px;
   text-align: center;
 }
 
@@ -47,244 +41,68 @@
 }
 
 .nav-instruction__distance {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #89cff0;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .nav-instruction__desc {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #e6edf3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.nav-instruction__stop {
-  background: none;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 8px;
-  color: rgba(255,255,255,0.45);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  cursor: pointer;
-  flex-shrink: 0;
-  pointer-events: all;
-  transition: all 0.15s;
-}
-.nav-instruction__stop:hover { background: rgba(255,255,255,0.08); color: #e6edf3; }
-
-/* ── Bottom status bar ───────────────────────────────── */
-.nav-status {
-  background: rgba(8, 11, 20, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  padding: 10px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-  pointer-events: all;
-}
-
-.nav-status__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-
-.nav-status__value {
-  font-size: 16px;
-  font-weight: 700;
-  color: #e6edf3;
-}
-
-.nav-status__label {
-  font-size: 10px;
+.nav-instruction__next {
+  font-size: 11px;
   color: rgba(255,255,255,0.38);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.nav-status__divider {
-  width: 1px;
-  height: 28px;
-  background: rgba(255,255,255,0.08);
-}
-
-/* ── Next step preview ───────────────────────────────── */
-.nav-next {
-  font-size: 11px;
-  color: rgba(255,255,255,0.35);
-  text-align: center;
-  padding: 2px;
-}
-
-.nav-bottom-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: all;
-}
-.nav-next { flex: 1; }
-.nav-compass { flex-shrink: 0; opacity: 0.8; }
-
-/* ── Ferry banner ────────────────────────────────────── */
-.nav-ferry {
-  background: rgba(8,11,20,0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(76,175,80,0.4);
-  border-radius: 12px;
-  padding: 8px 14px;
-  pointer-events: all;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.nav-ferry--warn { border-color: rgba(244,67,54,0.4); }
-
-.nav-ferry__name {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.55);
+  margin-top: 3px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mini compass inside instruction card */
+.nav-compass-mini {
   flex-shrink: 0;
-}
-.nav-ferry__msg {
-  font-size: 12px;
-  color: rgba(255,255,255,0.8);
-}
-.nav-ferry__msg strong { color: #ff6b6b; }
-
-/* ── Ferry card during navigation ───────────────────── */
-.nav-ferry-card {
-  background: rgba(8,11,20,0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(244,67,54,0.35);
-  border-radius: 12px;
-  padding: 10px 14px;
-  pointer-events: all;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.nav-ferry-card--ok { border-color: rgba(76,175,80,0.4); }
-
-.nav-ferry-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-.nav-ferry-card__name {
-  font-size: 11px; font-weight: 700;
-  color: rgba(255,255,255,0.6);
-}
-.nav-ferry-card__dep {
-  font-size: 12px; font-weight: 700;
-  color: #e6edf3;
+  opacity: 0.7;
 }
 
-.nav-ferry-card__status {
-  font-size: 12px;
-  color: rgba(255,255,255,0.7);
-}
-.nav-ferry-card__status--ok   strong { color: #66bb6a; }
-.nav-ferry-card__status--warn strong { color: #ff6b6b; }
-
-.nav-ferry-card__skip {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 7px;
-  color: rgba(255,255,255,0.65);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 5px 10px;
-  cursor: pointer;
-  width: fit-content;
-  transition: all 0.15s;
-  touch-action: manipulation;
-}
-.nav-ferry-card__skip:hover { background: rgba(255,255,255,0.14); color: #e6edf3; }
-.nav-ferry-card__skip--reset { color: rgba(255,255,255,0.35); font-weight: 400; }
-
-/* ── Thin ferry bar ──────────────────────────────────── */
-.nav-ferry-bar {
-  background: rgba(8,11,20,0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-left: 3px solid rgba(255,255,255,0.3);
-  border-radius: 10px;
-  padding: 7px 12px;
-  pointer-events: all;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-.nav-ferry-bar--ok   { border-left-color: #66bb6a; }
-.nav-ferry-bar--warn { border-left-color: #f44336; }
-.nav-ferry-bar--next { border-left-color: #ff9800; }
-
-.nav-ferry-bar__name {
-  color: rgba(255,255,255,0.55);
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.nav-ferry-bar__dep {
-  color: #e6edf3;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-.nav-ferry-bar__status {
-  flex: 1;
-  color: rgba(255,255,255,0.6);
-  font-size: 11px;
-}
-.nav-ferry-bar--ok   .nav-ferry-bar__status { color: #66bb6a; }
-.nav-ferry-bar--warn .nav-ferry-bar__status { color: #ff6b6b; }
-
-.nav-ferry-bar__btn {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 6px;
-  color: rgba(255,255,255,0.7);
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 9px;
-  cursor: pointer;
-  flex-shrink: 0;
-  white-space: nowrap;
-  touch-action: manipulation;
-  transition: all 0.12s;
-}
-.nav-ferry-bar__btn:hover { background: rgba(255,255,255,0.18); }
-.nav-ferry-bar__btn--reset { color: rgba(255,255,255,0.4); }
-
-/* ── Ferry progress line ─────────────────────────────── */
+/* ── Block 2: Ferry progress line ────────────────────── */
 .nav-ferry-line {
-  background: rgba(8,11,20,0.65);
+  background: rgba(8,11,20,0.72);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
-  padding: 7px 12px 8px;
+  padding: 7px 8px;
   pointer-events: all;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 6px;
 }
+
+.nav-ferry-line__arrow {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.65);
+  font-size: 18px;
+  font-weight: 300;
+  width: 30px; height: 30px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s;
+  touch-action: manipulation;
+}
+.nav-ferry-line__arrow:hover { background: rgba(255,255,255,0.16); }
+.nav-ferry-line__arrow--hidden { opacity: 0; pointer-events: none; }
+
+.nav-ferry-line__centre { flex: 1; display: flex; flex-direction: column; gap: 5px; }
 
 .nav-ferry-line__labels {
   display: flex;
@@ -307,7 +125,6 @@
   transition: width 1s ease, background 1s ease;
 }
 
-/* Centre marker (= on-time reference) */
 .nav-ferry-line__marker {
   position: absolute;
   top: -3px; bottom: -3px;
@@ -316,16 +133,3 @@
   border-radius: 1px;
   transform: translateX(-50%);
 }
-
-.nav-ferry-line__skip {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.4);
-  font-size: 10px;
-  cursor: pointer;
-  padding: 0;
-  text-align: left;
-  touch-action: manipulation;
-  transition: color 0.12s;
-}
-.nav-ferry-line__skip:hover { color: rgba(255,255,255,0.7); }

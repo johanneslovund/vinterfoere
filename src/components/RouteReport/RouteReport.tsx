@@ -72,13 +72,11 @@ export function RouteReport({
       </div>
 
       <div className="route-report__body">
-        {/* Danger spots */}
+        {/* Danger spots — only shown if any exist */}
+        {analysis.dangerSpots.length > 0 && (
         <div className="route-report__section">
           <div className="route-report__section-title">Farlige strekninger</div>
-          {analysis.dangerSpots.length === 0 ? (
-            <div className="no-spots">Ingen kritiske strekninger funnet</div>
-          ) : (
-            analysis.dangerSpots.map((s, i) => (
+          {analysis.dangerSpots.map((s, i) => (
               <div key={i} className="route-report__spot">
                 <div
                   className="route-report__spot-dot"
@@ -90,8 +88,9 @@ export function RouteReport({
                 </span>
               </div>
             ))
-          )}
+          }
         </div>
+        )}
 
         {/* Conditions */}
         <div className="route-report__section">

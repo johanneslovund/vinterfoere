@@ -11,12 +11,18 @@ function useAddressSearch() {
   const [results, setResults] = useState<GeoResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen]       = useState(false);
-  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressRef = useRef(false);  // prevents dropdown reopening after selection
 
   const search = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
     setLoading(true);
-    try { const r = await searchLocations(q); setResults(r); setOpen(r.length > 0); }
+    try {
+      const r = await searchLocations(q);
+      setResults(r);
+      if (!suppressRef.current) setOpen(r.length > 0);
+      suppressRef.current = false;
+    }
     finally { setLoading(false); }
   }, []);
 
@@ -26,8 +32,9 @@ function useAddressSearch() {
     return () => { if (debRef.current) clearTimeout(debRef.current); };
   }, [query, search]);
 
-  function clear() { setQuery(''); setResults([]); setOpen(false); }
-  return { query, setQuery, results, loading, open, setOpen, clear };
+  function clear() { setQuery(''); setResults([]); setOpen(false); suppressRef.current = false; }
+  function suppressNextOpen() { suppressRef.current = true; }
+  return { query, setQuery, results, loading, open, setOpen, clear, suppressNextOpen };
 }
 
 // ── props ─────────────────────────────────────────────────────────────────────
@@ -125,6 +132,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest, voiceContext }: Se
   }, [dest, from]);
 
   function selectDest(r: GeoResult) {
+    dest.suppressNextOpen();   // prevent debounce from reopening dropdown
     dest.setQuery(r.shortName);
     dest.setOpen(false);
     setDestCoords([r.lat, r.lon]);
@@ -136,6 +144,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest, voiceContext }: Se
   }
 
   function selectFrom(r: GeoResult) {
+    from.suppressNextOpen();
     from.setQuery(r.shortName);
     from.setOpen(false);
     setFromCoords([r.lat, r.lon]);
@@ -337,24 +346,31 @@ export function NavStatusBar({ destination, remainDist, remainMin, eta, onStop }
   };
 
   return (
-    <div className="nav-status-bar">
-      <div className="nav-status-bar__dest">{destination || 'Navigerer…'}</div>
-      <div className="nav-status-bar__sep" />
-      <div className="nav-status-bar__item">
-        <span className="nav-status-bar__val">{remainDist ? fmtDist(remainDist) : '--'}</span>
-        <span className="nav-status-bar__lbl">Igjen</span>
+    <>
+      {/* Top bar: destination + metrics */}
+      <div className="nav-status-bar">
+        <div className="nav-status-bar__dest">{destination || 'Navigerer…'}</div>
+        <div className="nav-status-bar__sep" />
+        <div className="nav-status-bar__item">
+          <span className="nav-status-bar__val">{remainDist ? fmtDist(remainDist) : '--'}</span>
+          <span className="nav-status-bar__lbl">Igjen</span>
+        </div>
+        <div className="nav-status-bar__sep" />
+        <div className="nav-status-bar__item">
+          <span className="nav-status-bar__val">{fmtTime(remainMin ?? 0)}</span>
+          <span className="nav-status-bar__lbl">Tid</span>
+        </div>
+        <div className="nav-status-bar__sep" />
+        <div className="nav-status-bar__item">
+          <span className="nav-status-bar__val">{eta || '--:--'}</span>
+          <span className="nav-status-bar__lbl">ETA</span>
+        </div>
       </div>
-      <div className="nav-status-bar__sep" />
-      <div className="nav-status-bar__item">
-        <span className="nav-status-bar__val">{fmtTime(remainMin ?? 0)}</span>
-        <span className="nav-status-bar__lbl">Tid</span>
-      </div>
-      <div className="nav-status-bar__sep" />
-      <div className="nav-status-bar__item">
-        <span className="nav-status-bar__val">{eta || '--:--'}</span>
-        <span className="nav-status-bar__lbl">ETA</span>
-      </div>
-      <button className="nav-status-bar__stop" onClick={onStop}>Stopp</button>
-    </div>
+
+      {/* Stop button — large, bottom-right, easy to reach while driving */}
+      <button className="nav-stop-fab" onClick={onStop} aria-label="Stopp navigasjon">
+        ✕
+      </button>
+    </>
   );
 }

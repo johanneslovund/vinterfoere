@@ -192,7 +192,7 @@ export function MapView({
         <div className="map-toggles">
           <button className={`map-toggle-btn${toggles.traffic ? ' map-toggle-btn--active' : ''}`}
             onClick={() => onToggle('traffic')}>
-            {toggles.traffic ? 'Skjul trafikk' : 'Trafikk'}
+            Trafikk
           </button>
           <button className={`map-toggle-btn${toggles.webcam ? ' map-toggle-btn--active' : ''}`}
             onClick={() => onToggle('webcam')}>

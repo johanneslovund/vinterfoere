@@ -368,3 +368,26 @@
   touch-action: manipulation;
 }
 .nav-status-bar__stop:hover { background: rgba(244,67,54,0.25); }
+
+/* ── Stop navigation FAB (bottom-right, large tap target) ── */
+.nav-stop-fab {
+  position: fixed;
+  bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px));
+  right: 16px;
+  z-index: 960;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(211,47,47,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(211,47,47,0.5);
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+.nav-stop-fab:hover { background: rgba(198,40,40,0.95); }
