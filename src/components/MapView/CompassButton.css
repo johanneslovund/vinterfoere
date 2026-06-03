@@ -3,7 +3,7 @@
   top: calc(var(--safe-top, 16px) + 62px + 48px);
   right: 12px;
   z-index: 800;
-  /* Exact same glass style as toggle buttons */
+  /* Matches toggle button glass style exactly */
   background: rgba(8,11,20,0.72);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -17,7 +17,7 @@
   color: rgba(255,255,255,0.5);
   transition: border-color 0.15s, color 0.15s;
 }
-.compass-btn:hover { border-color: rgba(137,207,240,0.4); color: #89cff0; }
+.compass-btn:hover  { border-color: rgba(137,207,240,0.4); color: #89cff0; }
 .compass-btn--active { border-color: rgba(137,207,240,0.45); color: #89cff0; }
 
 .compass-btn__dot {
@@ -29,8 +29,13 @@
   border: 1.5px solid rgba(8,11,20,0.8);
 }
 
-/* During navigation: hide since compass is inside instruction card */
-.is-navigating .compass-btn { display: none; }
+/* During navigation: move below the nav block (~96px tall) */
+.is-navigating .compass-btn {
+  top: calc(var(--safe-top, 16px) + 96px + 8px);
+}
 
-/* Hide map style selector during navigation */
-.is-navigating .map-style { display: none; }
+/* Map style selector also moves down during navigation */
+.is-navigating .map-style {
+  top: calc(var(--safe-top, 16px) + 96px + 56px + 8px);
+  display: flex !important; /* ensure visible */
+}

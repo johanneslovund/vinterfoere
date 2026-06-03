@@ -73,15 +73,7 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
               </div>
             )}
           </div>
-          {navInfo?.bearing !== null && navInfo?.bearing !== undefined && (
-            <svg className="nav-block__compass" width="26" height="26" viewBox="0 0 26 26">
-              <circle cx="13" cy="13" r="11" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
-              <polygon points="13,3 10.5,15 13,12 15.5,15" fill="#e53935"
-                transform={`rotate(${navInfo.bearing}, 13, 13)`}/>
-              <polygon points="13,23 10.5,11 13,14 15.5,11" fill="rgba(255,255,255,0.4)"
-                transform={`rotate(${navInfo.bearing}, 13, 13)`}/>
-            </svg>
-          )}
+          {/* Compass shown via the top-right CompassButton — no duplicate here */}
         </div>
       </div>
 

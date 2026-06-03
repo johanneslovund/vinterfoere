@@ -378,12 +378,13 @@
 }
 .nav-status-bar__stop:hover { background: rgba(244,67,54,0.25); }
 
-/* ── Stop navigation FAB — bottom LEFT so it doesn't clash with GPS reset ── */
+/* ── Stop navigation FAB — bottom RIGHT, above GPS reset button ── */
 .nav-stop-fab {
   position: fixed;
-  bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px));
-  left: 16px;    /* LEFT side */
-  right: auto;
+  /* GPS reset is at ~72px from bottom; FAB sits 62px above that */
+  bottom: calc(max(72px, calc(env(safe-area-inset-bottom) + 60px)) + 62px);
+  right: 14px;
+  left: auto;
   z-index: 960;
   width: 52px; height: 52px;
   border-radius: 50%;

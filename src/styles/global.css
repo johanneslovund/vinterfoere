@@ -22,9 +22,17 @@
   --sep:           rgba(255,255,255,0.06);
 }
 
-/* Map tile style only affects the Leaflet background — not UI panels */
+/* Tile styles */
 [data-mode="light"]     { --app-bg: #d8dde4; }
 [data-mode="satellite"] { --app-bg: #1a1f2e; }
+
+/* Light mode — increase glass opacity so text stays readable against bright tiles */
+[data-mode="light"] {
+  --glass-bg:      rgba(10,13,22,0.82);
+  --glass-overlay: rgba(8,11,20,0.92);
+  --glass-border:  rgba(255,255,255,0.14);
+  --glass-shadow:  0 4px 20px rgba(0,0,0,0.35);
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -50,6 +58,17 @@ body {
 input, textarea { -webkit-user-select: auto; user-select: auto; }
 
 .leaflet-container { background: var(--app-bg); }
+
+/* GPU compositing hints — keep panes on their own layer during iOS pinch-zoom */
+.leaflet-pane,
+.leaflet-overlay-pane,
+.leaflet-tile-pane {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
 
 /* Hide attribution completely */
 .leaflet-control-attribution { display: none !important; }
