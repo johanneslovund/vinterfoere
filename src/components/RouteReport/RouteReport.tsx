@@ -48,19 +48,27 @@ export function RouteReport({
   }, []);
   const badgeColor = RISK_COLORS[analysis.overallLevel];
 
+  const needsRecommendation = analysis.overallLevel !== 'trygt';
+
   return (
     <div className="route-report">
-      <div className="route-report__header">
-        <span className="route-report__title">Rutevurdering</span>
-        <span className="route-report__badge" style={{ background: badgeColor }}>
-          {analysis.overallLabel}
-        </span>
-        <span className="route-report__stats">
-          <strong>{route.distanceKm.toFixed(0)} km</strong>
-          {' · '}
-          <strong>{dur(route.durationMin)}</strong>
-        </span>
-        <button className="route-report__close" onClick={onClose}>×</button>
+      {/* Sticky top: header + nav links */}
+      <div className="route-report__sticky">
+        <div className="route-report__header">
+          <span className="route-report__title">Rutevurdering</span>
+          <span className="route-report__badge" style={{ background: badgeColor }}>
+            {analysis.overallLabel}
+          </span>
+          <span className="route-report__stats">
+            <strong>{route.distanceKm.toFixed(0)} km</strong>
+            {' · '}
+            <strong>{dur(route.durationMin)}</strong>
+          </span>
+          <button className="route-report__close" onClick={onClose}>×</button>
+        </div>
+        {toCoords && (
+          <NavLinks fromCoords={fromCoords} toCoords={toCoords} toName={toName} onNavigate={onNavigate} />
+        )}
       </div>
 
       <div className="route-report__body">
@@ -209,11 +217,13 @@ export function RouteReport({
           );
         })}
 
-        {/* Recommendation */}
-        <div className="route-report__recommendation">
-          <strong>Anbefaling</strong>
-          {analysis.recommendation}
-        </div>
+        {/* Anbefaling — only when there's real risk */}
+        {needsRecommendation && (
+          <div className="route-report__recommendation">
+            <strong>Anbefaling</strong>
+            {analysis.recommendation}
+          </div>
+        )}
 
         {/* Route AI analysis */}
         {routeAnalysisText && (
@@ -224,9 +234,6 @@ export function RouteReport({
                 <div key={i}>{renderText(line)}</div>
               ))}
             </div>
-            {toCoords && (
-              <NavLinks fromCoords={fromCoords} toCoords={toCoords} toName={toName} onNavigate={onNavigate} />
-            )}
           </div>
         )}
       </div>

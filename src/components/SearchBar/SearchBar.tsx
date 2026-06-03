@@ -19,7 +19,7 @@ function useAddressSearch() {
 
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
-    debRef.current = setTimeout(() => search(query), 300);
+    debRef.current = setTimeout(() => search(query), 120);
     return () => { if (debRef.current) clearTimeout(debRef.current); };
   }, [query, search]);
 

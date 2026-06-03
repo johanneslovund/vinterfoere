@@ -33,7 +33,10 @@ export default function App() {
   const [toggles, setToggles] = useState<MapToggles>({
     traffic: true, webcam: false, vaer: false, elevation: false, hazards: false,
   });
-  const [mapStyle,  setMapStyle]  = useState<MapStyle>('dark');
+  const [mapStyle, setMapStyle] = useState<MapStyle>(
+    () => (localStorage.getItem('vf-mapStyle') as MapStyle) ?? 'light'
+  );
+  const [navInfo, setNavInfo] = useState<import('./components/Navigation/NavigationMapController').NavInfo | null>(null);
   const [flyTarget, setFlyTarget] = useState<{
     lat: number; lon: number; zoom?: number; duration?: number
   } | null>(null);
@@ -167,7 +170,9 @@ export default function App() {
         data={data} toggles={toggles} onToggle={onToggle}
         flyTarget={flyTarget} routeResult={routeResult}
         onMapClick={handleMapClick} webcams={webcams} hazards={hazards}
-        pinLocation={pinLocation} mapStyle={mapStyle} onMapStyle={setMapStyle}
+        pinLocation={pinLocation} mapStyle={mapStyle}
+        onMapStyle={(s) => { setMapStyle(s); localStorage.setItem('vf-mapStyle', s); }}
+        navInfo={navInfo} onNavInfo={setNavInfo}
         onResetGps={handleResetGps}
         navSteps={navigating && routeResult ? routeResult.steps : undefined}
         onStopNavigation={() => setNavigating(false)}

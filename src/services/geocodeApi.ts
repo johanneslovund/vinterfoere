@@ -5,33 +5,39 @@ export interface GeoResult {
   lon: number;
 }
 
+// Entur geocoder — Norwegian-optimised, instant autocomplete, no key needed
 export async function searchLocations(query: string): Promise<GeoResult[]> {
+  if (query.trim().length < 1) return [];
   const params = new URLSearchParams({
-    q: query,
-    format: 'json',
-    limit: '6',
-    countrycodes: 'no',
-    'accept-language': 'no',
-    addressdetails: '1',
+    text:   query,
+    size:   '8',
+    lang:   'no',
   });
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?${params}`,
-    { headers: { 'User-Agent': 'Vinterføre/1.0' } }
+    `https://api.entur.io/geocoder/v1/autocomplete?${params}`,
+    { headers: { 'ET-Client-Name': 'Vinterfoere-App' } }
   );
-  const data = await res.json() as Array<{
-    display_name: string;
-    address?: { road?: string; city?: string; town?: string; village?: string; municipality?: string };
-    lat: string;
-    lon: string;
-  }>;
-  return data.map((r) => {
-    const a = r.address ?? {};
-    const short = a.road ?? a.city ?? a.town ?? a.village ?? a.municipality ?? r.display_name.split(',')[0];
+  if (!res.ok) return [];
+  const data = await res.json() as {
+    features: Array<{
+      geometry: { coordinates: [number, number] };
+      properties: {
+        id?: string;
+        name?: string;
+        label?: string;
+        locality?: string;
+        county?: string;
+      };
+    }>;
+  };
+  return data.features.map(f => {
+    const p = f.properties;
+    const [lon, lat] = f.geometry.coordinates;
     return {
-      displayName: r.display_name,
-      shortName: short,
-      lat: parseFloat(r.lat),
-      lon: parseFloat(r.lon),
+      displayName: p.label ?? p.name ?? '',
+      shortName:   p.name ?? p.label?.split(',')[0] ?? '',
+      lat,
+      lon,
     };
   });
 }

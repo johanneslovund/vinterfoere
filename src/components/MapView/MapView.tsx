@@ -13,6 +13,7 @@ import { WebcamLayer } from './WebcamLayer';
 import { HazardLayer } from './HazardLayer';
 import { UserLocationLayer } from './UserLocationLayer';
 import { NavigationOverlay } from '../Navigation/NavigationOverlay';
+import { NavigationMapController, NavInfo } from '../Navigation/NavigationMapController';
 import { RouteStep } from '../../services/routeApi';
 import { Webcam } from '../../services/webcamService';
 import { Hazard } from '../../services/hazardService';
@@ -97,6 +98,8 @@ interface MapViewProps {
   onMapStyle:       (s: MapStyle) => void;
   onResetGps:       () => void;
   navSteps?:        RouteStep[];
+  navInfo?:         NavInfo | null;
+  onNavInfo?:       (info: NavInfo) => void;
   onStopNavigation?: () => void;
 }
 
@@ -106,7 +109,7 @@ export function MapView({
   data, toggles, onToggle, flyTarget, routeResult,
   onMapClick, webcams, hazards, pinLocation,
   mapStyle, onMapStyle, onResetGps,
-  navSteps, onStopNavigation,
+  navSteps, navInfo, onNavInfo, onStopNavigation,
 }: MapViewProps) {
   const tiles = MAP_TILES[mapStyle];
 
@@ -151,11 +154,20 @@ export function MapView({
 
         {pinLocation && <PinMarker lat={pinLocation.lat} lon={pinLocation.lon} />}
         <FlyTo target={flyTarget} />
+
+        {/* Navigation map controller — must be inside MapContainer */}
+        {navSteps && navSteps.length > 0 && onNavInfo && onStopNavigation && (
+          <NavigationMapController
+            steps={navSteps}
+            onUpdate={onNavInfo}
+            onArrive={onStopNavigation}
+          />
+        )}
       </MapContainer>
 
-      {/* In-app navigation overlay */}
+      {/* Navigation UI overlay — outside MapContainer (no useMap needed) */}
       {navSteps && navSteps.length > 0 && onStopNavigation && (
-        <NavigationOverlay steps={navSteps} onStop={onStopNavigation} />
+        <NavigationOverlay steps={navSteps} navInfo={navInfo ?? null} onStop={onStopNavigation} />
       )}
 
       {/* Map style selector — top right */}
