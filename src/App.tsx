@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useWeatherGrid } from './hooks/useWeatherGrid';
 import { MapView, MapToggles } from './components/MapView/MapView';
 import { MapStyle } from './components/MapView/MapStyleSelector';
-import { SearchPanel } from './components/SearchBar/SearchBar';
+import { SearchPanel, NavDestPill } from './components/SearchBar/SearchBar';
 import { SplashScreen } from './components/SplashScreen/SplashScreen';
 import { RouteReport } from './components/RouteReport/RouteReport';
 import { LocationPanel } from './components/LocationPanel/LocationPanel';
@@ -31,7 +31,7 @@ export default function App() {
   const { data } = useWeatherGrid();
 
   const [toggles, setToggles] = useState<MapToggles>({
-    traffic: true, webcam: false, vaer: false, elevation: false, hazards: false,
+    traffic: false, webcam: false, vaer: false, elevation: false, hazards: false,
   });
   const [mapStyle, setMapStyle] = useState<MapStyle>(
     () => (localStorage.getItem('vf-mapStyle') as MapStyle) ?? 'light'
@@ -150,7 +150,10 @@ export default function App() {
     <>
       <SplashScreen onReveal={handleSplashReveal} />
 
-      {!navigating && <SearchPanel onRoute={handleRoute} onClear={handleClear} onGpsRequest={handleGpsRequest} />}
+      {navigating
+        ? <NavDestPill destination={routeToName || 'Destinasjon'} />
+        : <SearchPanel onRoute={handleRoute} onClear={handleClear} onGpsRequest={handleGpsRequest} />
+      }
 
       {routeResult && routeAnalysis && !navigating && (
         <RouteReport
@@ -160,7 +163,7 @@ export default function App() {
           routeStartTime={routeStartTime}
           onNavigate={() => {
             setNavigating(true);
-            handleClear();            // reset route report + minimise search
+            setToggles(t => ({ ...t, traffic: true })); // enable traffic on nav start
             const pos = gpsRef.current;
             if (pos) setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 16, duration: 1 });
           }}

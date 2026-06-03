@@ -161,3 +161,56 @@
   color: rgba(255,255,255,0.8);
 }
 .nav-ferry__msg strong { color: #ff6b6b; }
+
+/* ── Ferry card during navigation ───────────────────── */
+.nav-ferry-card {
+  background: rgba(8,11,20,0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(244,67,54,0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.nav-ferry-card--ok { border-color: rgba(76,175,80,0.4); }
+
+.nav-ferry-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.nav-ferry-card__name {
+  font-size: 11px; font-weight: 700;
+  color: rgba(255,255,255,0.6);
+}
+.nav-ferry-card__dep {
+  font-size: 12px; font-weight: 700;
+  color: #e6edf3;
+}
+
+.nav-ferry-card__status {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+}
+.nav-ferry-card__status--ok   strong { color: #66bb6a; }
+.nav-ferry-card__status--warn strong { color: #ff6b6b; }
+
+.nav-ferry-card__skip {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 7px;
+  color: rgba(255,255,255,0.65);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.15s;
+  touch-action: manipulation;
+}
+.nav-ferry-card__skip:hover { background: rgba(255,255,255,0.14); color: #e6edf3; }
+.nav-ferry-card__skip--reset { color: rgba(255,255,255,0.35); font-weight: 400; }

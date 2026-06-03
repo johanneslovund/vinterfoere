@@ -223,10 +223,12 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
         <span className="search-field__label">Fra</span>
         <span className="search-field__sep" />
         {fromGps ? (
-          /* GPS mode — show label, × lets user type instead */
-          <span className="search-field__input" style={{ color: '#89cff0', cursor: 'default' }}>
-            {gpsLoading ? 'Henter posisjon…' : 'Min posisjon'}
-          </span>
+          /* GPS chip — × is right next to the text */
+          <div className="search-gps-chip" style={{ flex: 1 }}>
+            <span>{gpsLoading ? 'Henter posisjon…' : 'Min posisjon'}</span>
+            <button className="search-gps-chip__x"
+              onClick={() => { setFromGps(false); setFromCoords(null); from.clear(); }}>×</button>
+          </div>
         ) : (
           <input
             className="search-field__input"
@@ -237,14 +239,12 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
             autoComplete="off" spellCheck={false}
           />
         )}
-        {fromGps
-          ? <button className="search-field__clear" onClick={() => { setFromGps(false); setFromCoords(null); from.clear(); }}>×</button>
-          : from.query
+        {!fromGps && (from.query
             ? <button className="search-field__clear" onClick={() => { setFromCoords(null); from.clear(); }}>×</button>
             : <button className="search-field__gps" onClick={handleGps} disabled={gpsLoading}>
                 {gpsLoading ? '…' : 'GPS'}
               </button>
-        }
+        )}
         {from.open && (
           <div className="search-dropdown">
             {from.loading
@@ -266,6 +266,19 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
           {routing ? 'Beregner…' : 'Beregn rute'}
         </button>
         <button className="search-close" onClick={clearAll} title="Tøm søk">×</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Navigation destination pill ───────────────────────────────────────────────
+export function NavDestPill({ destination }: { destination: string }) {
+  return (
+    <div className="nav-dest-pill">
+      <span className="nav-dest-pill__icon">◎</span>
+      <div className="nav-dest-pill__text">
+        <span className="nav-dest-pill__label">Navigerer til</span>
+        {destination}
       </div>
     </div>
   );
