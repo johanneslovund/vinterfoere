@@ -9,7 +9,7 @@ export interface NavInfo {
   remainDist: number
   remainMin:  number
   eta:        string
-  bearing:    number | null   // degrees clockwise from North
+  bearing:    number | null
 }
 
 interface Props {
@@ -19,11 +19,13 @@ interface Props {
 }
 
 export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
-  const map        = useMap()
-  const watchId    = useRef<number | null>(null)
-  const bearingRef = useRef<number | null>(null)
+  const map           = useMap()
+  const watchId       = useRef<number | null>(null)
+  const bearingRef    = useRef<number | null>(null)
+  // Track when user last touched the map so we don't fight their input
+  const lastTouchRef  = useRef(0)
 
-  // Device orientation → compass heading
+  // Device orientation → compass heading (for the UI compass indicator only)
   useEffect(() => {
     const handler = (e: DeviceOrientationEvent) => {
       const raw = (e as DeviceOrientationEvent & { webkitCompassHeading?: number })
@@ -38,7 +40,7 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
       requestPermission?: () => Promise<string>
     }
     if (typeof DOE.requestPermission === 'function') {
-      DOE.requestPermission()
+      DOE.requestPermission?.()
         .then(p => { if (p === 'granted') window.addEventListener('deviceorientation', handler, true) })
         .catch(() => {})
     } else {
@@ -50,98 +52,64 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
   useEffect(() => {
     if (!navigator.geolocation || !steps.length) return
 
-    // Rotate the Leaflet map container so direction-of-travel faces "up"
-    const applyRotation = (bearing: number) => {
-      const container = map.getContainer()
-      container.style.transform = `rotate(${-bearing}deg)`
-      container.style.transformOrigin = 'center center'
-      // Counter-rotate overlays so UI stays upright
-      const overlays = container.querySelectorAll<HTMLElement>(
-        '.leaflet-control-container, .leaflet-pane.leaflet-shadow-pane, ' +
-        '.leaflet-pane.leaflet-marker-pane, .leaflet-pane.leaflet-overlay-pane'
-      )
-      overlays.forEach(el => {
-        el.style.transform = `rotate(${bearing}deg)`
-        el.style.transformOrigin = '50% 50%'
-      })
-    }
+    // ── Interaction detection via touch events on container ──────────────────
+    const container = map.getContainer()
+    const onTouch = () => { lastTouchRef.current = Date.now() }
 
-    const resetRotation = () => {
-      const container = map.getContainer()
-      container.style.transform = ''
-      container.querySelectorAll<HTMLElement>(
-        '.leaflet-control-container, .leaflet-pane'
-      ).forEach(el => { el.style.transform = '' })
-    }
+    container.addEventListener('touchstart', onTouch, { passive: true })
+    container.addEventListener('touchmove',  onTouch, { passive: true })
+    map.on('dragstart', onTouch)
+    map.on('zoomstart', onTouch)
 
-    // Pause auto-pan while user manually interacts with the map
-    let userInteracting = false;
-    let interactTimeout: ReturnType<typeof setTimeout> | null = null;
-    const onDragStart = () => {
-      userInteracting = true;
-      if (interactTimeout) clearTimeout(interactTimeout);
-    };
-    const onDragEnd = () => {
-      if (interactTimeout) clearTimeout(interactTimeout);
-      interactTimeout = setTimeout(() => { userInteracting = false; }, 6000);
-    };
-    map.on('dragstart', onDragStart);
-    map.on('dragend',   onDragEnd);
-    map.on('zoomstart', onDragStart);
-    map.on('zoomend',   onDragEnd);
-
+    // ── GPS watch ─────────────────────────────────────────────────────────────
     watchId.current = navigator.geolocation.watchPosition(
       pos => {
         const { latitude: lat, longitude: lon, speed, heading: gpsHeading } = pos.coords
 
-        // Use GPS heading when moving, fallback to compass
-        const bearing = (gpsHeading !== null && !isNaN(gpsHeading) && (speed ?? 0) > 0.5)
-          ? gpsHeading
-          : bearingRef.current
+        // GPS heading overrides compass when moving
+        if (gpsHeading !== null && !isNaN(gpsHeading) && (speed ?? 0) > 0.5) {
+          bearingRef.current = gpsHeading
+        }
 
-        if (bearing !== null) applyRotation(bearing)
+        // ── Navigation metrics ──────────────────────────────────────────────
+        const stepIdx  = findCurrentStep(lat, lon, steps)
+        const remDist  = remainingDistance(lat, lon, steps, stepIdx)
+        const speedMs  = speed && speed > 1 ? speed : 80 / 3.6
+        const remMin   = remDist / speedMs / 60
+        const etaDate  = new Date(Date.now() + remDist / speedMs * 1000)
+        const eta      = etaDate.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' })
 
-        const stepIdx = findCurrentStep(lat, lon, steps)
-        const remDist = remainingDistance(lat, lon, steps, stepIdx)
-        const speedMs = (speed && speed > 1) ? speed : 80 / 3.6
-        const remainMin = (remDist / speedMs) / 60
-        const etaDate   = new Date(Date.now() + (remDist / speedMs) * 1000)
-        const eta       = etaDate.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' })
+        onUpdate({ stepIdx, remainDist: remDist, remainMin: remMin, eta, bearing: bearingRef.current })
 
-        onUpdate({ stepIdx, remainDist: remDist, remainMin, eta, bearing })
-
-        // Pan only when user not interacting AND position is near viewport edge
-        if (!userInteracting) {
-          const bounds = map.getBounds()
-          const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25
-          const lonPad = (bounds.getEast()  - bounds.getWest())  * 0.25
-          const inner  = L.latLngBounds(
-            [bounds.getSouth() + latPad, bounds.getWest() + lonPad],
-            [bounds.getNorth() - latPad, bounds.getEast() - lonPad]
+        // ── Auto-pan only when user hasn't touched the map in 6 seconds ───────
+        const userIdleMs = Date.now() - lastTouchRef.current
+        if (userIdleMs > 6000) {
+          // Only pan if position is outside the inner 40% of viewport
+          const bounds  = map.getBounds()
+          const latSpan = (bounds.getNorth() - bounds.getSouth()) * 0.30
+          const lonSpan = (bounds.getEast()  - bounds.getWest())  * 0.30
+          const inner   = L.latLngBounds(
+            [bounds.getSouth() + latSpan, bounds.getWest() + lonSpan],
+            [bounds.getNorth() - latSpan, bounds.getEast() - lonSpan]
           )
           if (!inner.contains([lat, lon])) {
-            map.panTo([lat, lon], { animate: true, duration: 0.6, noMoveStart: true })
+            map.panTo([lat, lon], { animate: true, duration: 0.8, noMoveStart: true })
           }
         }
 
-        // Auto-end
-        if (stepIdx >= steps.length - 2 && remDist < 50) {
-          resetRotation()
-          onArrive()
-        }
+        // Auto-end on arrival
+        if (stepIdx >= steps.length - 2 && remDist < 50) onArrive()
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 1500, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
     )
 
     return () => {
       if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current)
-      map.off('dragstart', onDragStart)
-      map.off('dragend',   onDragEnd)
-      map.off('zoomstart', onDragStart)
-      map.off('zoomend',   onDragEnd)
-      if (interactTimeout) clearTimeout(interactTimeout)
-      resetRotation()
+      container.removeEventListener('touchstart', onTouch)
+      container.removeEventListener('touchmove',  onTouch)
+      map.off('dragstart', onTouch)
+      map.off('zoomstart', onTouch)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steps])
