@@ -35,16 +35,18 @@ export function CompassButton({ bearing, lockMode, onToggle }: Props) {
       title={lockMode === 'north' ? 'Følg retning' : 'Lås nord'}
     >
       <svg width="36" height="36" viewBox="0 0 36 36">
-        {/* Ring */}
-        <circle cx="18" cy="18" r="15" fill="rgba(8,11,20,0.72)" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
-        {/* N needle — rotates to always point North */}
+        {/* Outer ring */}
+        <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
+        {/* Single red needle pointing North — no duplicate white needle */}
         <g transform={`rotate(${-deg}, 18, 18)`}>
-          <polygon points="18,5 15.5,18 18,16 20.5,18" fill="#e53935"/>
-          <polygon points="18,31 15.5,18 18,20 20.5,18" fill="rgba(255,255,255,0.55)"/>
+          {/* North tip (red, filled) */}
+          <path d="M18,5 L15,18 L18,15 L21,18 Z" fill="#e53935"/>
+          {/* South tail (same shape, dimmer) */}
+          <path d="M18,31 L15,18 L18,21 L21,18 Z" fill="rgba(255,255,255,0.22)"/>
         </g>
         {/* N label */}
-        <text x="18" y="4" textAnchor="middle" fontSize="6" fill="rgba(255,255,255,0.4)"
-          fontFamily="system-ui" fontWeight="bold">N</text>
+        <text x="18" y="4.5" textAnchor="middle" fontSize="5.5" fill="rgba(255,255,255,0.45)"
+          fontFamily="system-ui" fontWeight="700">N</text>
       </svg>
       {lockMode === 'heading' && (
         <div className="compass-btn__dot" />

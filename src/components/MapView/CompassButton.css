@@ -3,7 +3,7 @@
   top: calc(var(--safe-top, 16px) + 62px + 48px);
   right: 12px;
   z-index: 800;
-  /* Matches toggle button glass style exactly */
+  /* Same glass style as other map toggle buttons */
   background: rgba(8,11,20,0.72);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -14,28 +14,29 @@
   padding: 0;
   display: flex; align-items: center; justify-content: center;
   box-shadow: none;
-  color: rgba(255,255,255,0.5);
   transition: border-color 0.15s, color 0.15s;
+  /* Always visible — never hidden */
+  touch-action: manipulation;
 }
-.compass-btn:hover  { border-color: rgba(137,207,240,0.4); color: #89cff0; }
-.compass-btn--active { border-color: rgba(137,207,240,0.45); color: #89cff0; }
+.compass-btn:hover    { border-color: rgba(137,207,240,0.4); }
+.compass-btn--active  { border-color: rgba(137,207,240,0.45); }
 
+/* Small active indicator dot */
 .compass-btn__dot {
   position: absolute;
-  bottom: 2px; right: 2px;
+  bottom: 3px; right: 3px;
   width: 6px; height: 6px;
   border-radius: 50%;
   background: #89cff0;
   border: 1.5px solid rgba(8,11,20,0.8);
 }
 
-/* During navigation: move below the nav block (~96px tall) */
+/* During navigation: move compass below the nav block so it doesn't overlap */
 .is-navigating .compass-btn {
-  top: calc(var(--safe-top, 16px) + 96px + 8px);
+  top: calc(var(--safe-top, 16px) + 100px + 8px);
 }
 
-/* Map style selector also moves down during navigation */
+/* Map style selector: always visible, moves further down during navigation */
 .is-navigating .map-style {
-  top: calc(var(--safe-top, 16px) + 96px + 56px + 8px);
-  display: flex !important; /* ensure visible */
+  top: calc(var(--safe-top, 16px) + 100px + 8px + 48px + 6px) !important;
 }
