@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    base: '/vinterfoere/',
+    base: '/ferdpilot/',
     plugins: [
       react(),
       {

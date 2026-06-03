@@ -29,7 +29,7 @@ export function SplashScreen({ onReveal }: Props) {
       <div className={`splash__bg${bgOut ? ' splash__bg--out' : ''}`} />
       <img
         src={`${import.meta.env.BASE_URL}logo.png`}
-        alt="Vinterføre"
+        alt="FerdPilot"
         className={`splash__logo${logoOut ? ' splash__logo--out' : ''}`}
       />
     </div>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { searchLocations, GeoResult } from '../../services/geocodeApi';
 import './SearchBar.css';
 
@@ -45,8 +45,39 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
   const [gpsLoading, setGpsLoading] = useState(false);
   const [routing,    setRouting]    = useState(false);
 
-  const pillRef  = useRef<HTMLDivElement>(null);
-  const fromRef  = useRef<HTMLDivElement>(null);
+  const pillRef    = useRef<HTMLDivElement>(null);
+  const fromRef    = useRef<HTMLDivElement>(null);
+  const [listening, setListening] = useState(false);
+
+  // Speech recognition (Norwegian, browser API)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type AnySpeech = any;
+
+  const recognition = useMemo<AnySpeech>(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) return null;
+    const r = new Ctor();
+    r.lang = 'no-NO';
+    r.continuous = false;
+    r.interimResults = false;
+    return r;
+  }, []);
+
+  function startListening(onResult: (text: string) => void) {
+    if (!recognition) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      const text = e.results[0][0].transcript as string;
+      onResult(text);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend   = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  }
 
   // Phase: 'pill' = single search bar, 'expanded' = full route panel
   const phase = destCoords ? 'expanded' : 'pill';
@@ -113,7 +144,11 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
     return (
       <div className="search-pill-wrap" ref={pillRef}>
         <div className="search-pill">
-          <span className="search-pill__icon">⌕</span>
+          <img
+            src={`${import.meta.env.BASE_URL}icon.png`}
+            alt="FerdPilot"
+            className="search-pill__logo"
+          />
           <input
             className="search-pill__input"
             type="text"
@@ -124,9 +159,18 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
             autoComplete="off"
             spellCheck={false}
           />
-          {dest.query && (
-            <button className="search-pill__clear" onClick={() => dest.clear()}>×</button>
-          )}
+          {dest.query
+            ? <button className="search-pill__clear" onClick={() => dest.clear()}>×</button>
+            : recognition && (
+              <button
+                className={`search-pill__mic${listening ? ' search-pill__mic--listening' : ''}`}
+                onClick={() => startListening(text => { dest.setQuery(text); })}
+                title="Taleinndata"
+              >
+                🎤
+              </button>
+            )
+          }
         </div>
 
         {dest.open && (
