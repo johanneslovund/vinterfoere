@@ -1,6 +1,7 @@
 import { RouteAnalysis } from '../../services/routeAnalysis';
 import { RISK_COLORS } from '../../types/weather';
 import { RouteResult } from '../../services/routeApi';
+import { FerryAnalysis } from '../../services/ferryService';
 import { NavLinks } from '../NavLinks/NavLinks';
 import './RouteReport.css';
 
@@ -21,13 +22,18 @@ interface Props {
   analysis: RouteAnalysis;
   route: RouteResult;
   routeAnalysisText?: string;
+  ferryAnalyses?: FerryAnalysis[];
   fromCoords?: [number, number] | null;
   toCoords?: [number, number] | null;
   toName?: string;
   onClose: () => void;
 }
 
-export function RouteReport({ analysis, route, routeAnalysisText, fromCoords, toCoords, toName, onClose }: Props) {
+function fmtTime(d: Date) {
+  return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+}
+
+export function RouteReport({ analysis, route, routeAnalysisText, ferryAnalyses, fromCoords, toCoords, toName, onClose }: Props) {
   const badgeColor = RISK_COLORS[analysis.overallLevel];
 
   return (
@@ -99,6 +105,55 @@ export function RouteReport({ analysis, route, routeAnalysisText, fromCoords, to
             </div>
           )}
         </div>
+
+        {/* Ferry section */}
+        {ferryAnalyses && ferryAnalyses.length > 0 && ferryAnalyses.map((fa, i) => {
+          const isClose  = fa.minutesEarly !== null && fa.minutesEarly > -20 && fa.minutesEarly < 10;
+          const willMiss = fa.minutesEarly !== null && fa.minutesEarly < 0;
+
+          return (
+            <div key={i} className="route-report__section" style={{ gridColumn: '1 / -1', borderColor: willMiss ? 'rgba(244,67,54,0.3)' : 'rgba(255,255,255,0.07)' }}>
+              <div className="route-report__section-title">
+                ⛴ {fa.ferry.name}
+              </div>
+
+              {/* ETA row */}
+              <div className="route-report__ferry-eta">
+                <span>Ankomst terminal:</span>
+                <strong>{fmtTime(fa.etaToFerry)}</strong>
+              </div>
+
+              {/* Speed warning */}
+              {isClose && fa.requiredSpeedKmh && willMiss && (
+                <div className="route-report__ferry-warn">
+                  ⚠ Du går glipp av ferjen kl. {fa.nextFerry ? fmtTime(fa.nextFerry.time) : '?'}.
+                  Du må kjøre <strong>{fa.requiredSpeedKmh} km/t</strong> snitt
+                  ({fa.requiredSpeedKmh - fa.speedLimitKmh > 0 ? `+${fa.requiredSpeedKmh - fa.speedLimitKmh}` : fa.requiredSpeedKmh - fa.speedLimitKmh} km/t over fartsgrensen).
+                </div>
+              )}
+              {isClose && !willMiss && fa.minutesEarly !== null && fa.minutesEarly < 10 && (
+                <div className="route-report__ferry-ok">
+                  ✓ Du rekker ferjen kl. {fa.nextFerry ? fmtTime(fa.nextFerry.time) : '?'}
+                  {' '}med ca. {Math.round(fa.minutesEarly)} min å spare.
+                </div>
+              )}
+
+              {/* Departure list */}
+              <div className="route-report__ferry-times">
+                {fa.departures.slice(0, 5).map((dep, j) => {
+                  const isNext = fa.nextFerry && dep.time.getTime() === fa.nextFerry.time.getTime();
+                  return (
+                    <div key={j} className={`route-report__ferry-dep${isNext ? ' route-report__ferry-dep--next' : ''}`}>
+                      <span className="route-report__ferry-time">{fmtTime(dep.time)}</span>
+                      <span className="route-report__ferry-dest">→ {dep.destination}</span>
+                      {isNext && <span className="route-report__ferry-badge">{willMiss ? 'Neste' : 'Rekker'}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
 
         {/* Recommendation */}
         <div className="route-report__recommendation">

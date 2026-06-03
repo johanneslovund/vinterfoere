@@ -13,6 +13,7 @@ import { reverseGeocode, nearestWeather } from './services/locationAnalysis';
 import { generateLocalAnalysis, generateRouteAnalysis } from './services/localAnalysis';
 import { fetchWebcams, Webcam } from './services/webcamService';
 import { fetchHazards, Hazard } from './services/hazardService';
+import { analyseFerries, FerryAnalysis } from './services/ferryService';
 import { GridWeather } from './types/weather';
 import './styles/global.css';
 
@@ -39,6 +40,7 @@ export default function App() {
   const [routeResult,    setRouteResult]    = useState<RouteResult | null>(null);
   const [routeAnalysis,  setRouteAnalysis]  = useState<RouteAnalysis | null>(null);
   const [routeAnalysisText, setRouteAnalysisText] = useState<string | undefined>(undefined);
+  const [ferryAnalyses, setFerryAnalyses]         = useState<FerryAnalysis[]>([]);
   const [routeFrom, setRouteFrom] = useState<[number,number] | null>(null);
   const [routeTo,   setRouteTo]   = useState<[number,number] | null>(null);
   const [routeToName, setRouteToName] = useState('');
@@ -103,12 +105,19 @@ export default function App() {
       setFlyTarget({ lat: mid[0], lon: mid[1] });
       setRouteAnalysis(analyzeRoute(result.coordinates, data));
       setRouteAnalysisText(generateRouteAnalysis(fromName, toName, data, result.coordinates));
+      // Analyse ferries async — don't block route display
+      if (result.ferries.length > 0) {
+        analyseFerries(result.ferries).then(setFerryAnalyses).catch(() => {});
+      } else {
+        setFerryAnalyses([]);
+      }
     } catch { /* ignore */ }
   }, [data]);
 
   const handleClear = useCallback(() => {
     setRouteResult(null); setRouteAnalysis(null); setRouteAnalysisText(undefined);
     setRouteFrom(null); setRouteTo(null); setRouteToName('');
+    setFerryAnalyses([]);
   }, []);
 
   const handleMapClick = useCallback(async (lat: number, lon: number) => {
@@ -135,6 +144,7 @@ export default function App() {
         <RouteReport
           analysis={routeAnalysis} route={routeResult}
           routeAnalysisText={routeAnalysisText}
+          ferryAnalyses={ferryAnalyses}
           fromCoords={routeFrom} toCoords={routeTo} toName={routeToName}
           onClose={handleClear}
         />

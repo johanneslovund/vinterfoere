@@ -161,3 +161,77 @@
   .route-report { top: 0; border-radius: 0 0 14px 14px; }
   .route-report__body { grid-template-columns: 1fr; }
 }
+
+/* ── Ferry section ──────────────────────────────────── */
+.route-report__ferry-eta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.route-report__ferry-eta strong { color: #e6edf3; font-weight: 700; }
+
+.route-report__ferry-warn {
+  font-size: 12px;
+  color: rgba(244,100,80,0.95);
+  background: rgba(244,67,54,0.1);
+  border: 1px solid rgba(244,67,54,0.25);
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.route-report__ferry-warn strong { color: #ff6b6b; }
+
+.route-report__ferry-ok {
+  font-size: 12px;
+  color: rgba(76,175,80,0.95);
+  background: rgba(76,175,80,0.1);
+  border: 1px solid rgba(76,175,80,0.25);
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+}
+
+.route-report__ferry-times {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.route-report__ferry-dep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  padding: 3px 0;
+}
+
+.route-report__ferry-dep--next {
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+.route-report__ferry-time {
+  font-variant-numeric: tabular-nums;
+  width: 36px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.route-report__ferry-dest { flex: 1; }
+
+.route-report__ferry-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(137,207,240,0.18);
+  color: #89cff0;
+  border: 1px solid rgba(137,207,240,0.3);
+  flex-shrink: 0;
+}
