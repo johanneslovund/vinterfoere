@@ -45,7 +45,7 @@
   white-space: nowrap;
   flex-shrink: 0;
   transition: all 0.15s;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: none;
 }
 .map-toggle-btn:hover    { color: var(--text-primary); }
 .map-toggle-btn--active  { border-color: rgba(137,207,240,0.45); color: #89cff0; }

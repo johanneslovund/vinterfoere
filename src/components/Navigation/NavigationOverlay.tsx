@@ -1,16 +1,24 @@
 // Pure UI overlay — no useMap(), safe to use anywhere
 import { RouteStep } from '../../services/routeApi'
 import { NavInfo } from './NavigationMapController'
+import { FerryAnalysis } from '../../services/ferryService'
 import { maneuverArrow, fmtDistance, fmtDuration } from '../../services/navigationService'
 import './NavigationOverlay.css'
 
 interface Props {
-  steps:   RouteStep[]
-  navInfo: NavInfo | null
-  onStop:  () => void
+  steps:          RouteStep[]
+  navInfo:        NavInfo | null
+  ferryAnalyses?: FerryAnalysis[]
+  routeStartTime?: Date
+  onStop:         () => void
 }
 
-export function NavigationOverlay({ steps, navInfo, onStop }: Props) {
+function fmtClock(d: Date) {
+  return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+}
+
+export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTime, onStop }: Props) {
+  const now = new Date();
   if (!steps.length) return null
 
   const idx      = navInfo?.stepIdx ?? 0
@@ -59,6 +67,39 @@ export function NavigationOverlay({ steps, navInfo, onStop }: Props) {
           <span className="nav-status__label">ETA</span>
         </div>
       </div>
+
+      {/* Ferry banners — live ETAs during navigation */}
+      {ferryAnalyses && ferryAnalyses.map((fa, i) => {
+        const elapsed = routeStartTime
+          ? (now.getTime() - routeStartTime.getTime()) / 60000 : 0;
+        const remaining = Math.max(0, fa.ferry.driveTimeToFerryMin - elapsed);
+        const liveEta   = new Date(now.getTime() + remaining * 60 * 1000);
+        const nextFerry = fa.departures.find(d => d.time >= new Date(liveEta.getTime() - 2 * 60 * 1000));
+        if (!nextFerry) return null;
+        const minEarly  = (nextFerry.time.getTime() - liveEta.getTime()) / 60000;
+        const willMiss  = minEarly < 0 && minEarly > -20;
+
+        let reqSpeed: number | null = null;
+        if (willMiss) {
+          const hrs = (nextFerry.time.getTime() - now.getTime()) / 3600000;
+          if (hrs > 0) { const r = fa.ferry.driveDistanceToFerryKm / hrs; if (r <= 120) reqSpeed = Math.round(r); }
+        }
+
+        return (
+          <div key={i} className={`nav-ferry${willMiss ? ' nav-ferry--warn' : ''}`}>
+            <div className="nav-ferry__name">⛴ {fa.ferry.name}</div>
+            {willMiss && reqSpeed ? (
+              <div className="nav-ferry__msg">
+                Gå glipp av {fmtClock(nextFerry.time)} — kjør <strong>{reqSpeed} km/t</strong>
+              </div>
+            ) : (
+              <div className="nav-ferry__msg">
+                Rekker {fmtClock(nextFerry.time)} — ankommer {Math.round(minEarly)} min tidlig
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       {/* Next step hint + compass bearing */}
       <div className="nav-bottom-row">

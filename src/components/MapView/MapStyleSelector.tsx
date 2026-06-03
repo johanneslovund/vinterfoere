@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MoonIcon, SunIcon, SatelliteIcon } from '../Icons/Icons'
 import './MapStyleSelector.css'
 
 export type MapStyle = 'dark' | 'light' | 'satellite'
@@ -24,6 +25,12 @@ const LABELS: Record<MapStyle, string> = {
   satellite: 'Satellitt',
 }
 
+function StyleIcon({ style }: { style: MapStyle }) {
+  if (style === 'dark')      return <MoonIcon size={15} />
+  if (style === 'light')     return <SunIcon  size={15} />
+  return <SatelliteIcon size={15} />
+}
+
 interface Props {
   value: MapStyle
   onChange: (s: MapStyle) => void
@@ -39,7 +46,7 @@ export function MapStyleSelector({ value, onChange }: Props) {
         onClick={() => setOpen(o => !o)}
         title="Kartvisning"
       >
-        {value === 'dark' ? '🌙' : value === 'light' ? '☀️' : '🛰'}
+        <StyleIcon style={value} />
       </button>
 
       {open && (
@@ -50,7 +57,7 @@ export function MapStyleSelector({ value, onChange }: Props) {
               className={`map-style__option${value === s ? ' map-style__option--active' : ''}`}
               onClick={() => { onChange(s); setOpen(false); }}
             >
-              {s === 'dark' ? '🌙' : s === 'light' ? '☀️' : '🛰'} {LABELS[s]}
+              <StyleIcon style={s} /> {LABELS[s]}
             </button>
           ))}
         </div>

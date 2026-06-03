@@ -11,12 +11,12 @@
   --text-primary:  #e6edf3;
   --text-muted:    rgba(255,255,255,0.42);
   --border:        rgba(255,255,255,0.1);
-  --glass-bg:      rgba(8,11,20,0.80);
+  --glass-bg:      rgba(8,11,20,0.55);
   --glass-bg-sub:  rgba(255,255,255,0.04);
-  --glass-blur:    blur(20px);
-  --glass-border:  rgba(255,255,255,0.10);
-  --glass-shadow:  0 8px 32px rgba(0,0,0,0.45);
-  --glass-overlay: rgba(8,11,20,0.92);
+  --glass-blur:    blur(22px);
+  --glass-border:  rgba(255,255,255,0.12);
+  --glass-shadow:  0 4px 20px rgba(0,0,0,0.30);
+  --glass-overlay: rgba(8,11,20,0.72);
   --label-muted:   rgba(255,255,255,0.28);
   --app-bg:        #060a10;
   --sep:           rgba(255,255,255,0.06);

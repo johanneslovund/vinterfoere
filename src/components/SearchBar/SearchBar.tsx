@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { searchLocations, GeoResult } from '../../services/geocodeApi';
+import { MicIcon } from '../Icons/Icons';
 import './SearchBar.css';
 
 // ── shared address-search hook ────────────────────────────────────────────────
@@ -167,7 +168,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
                 onClick={() => startListening(text => { dest.setQuery(text); })}
                 title="Taleinndata"
               >
-                🎤
+                <MicIcon size={17} />
               </button>
             )
           }
@@ -201,7 +202,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
           className="search-field__input"
           value={dest.query}
           onChange={(e) => { dest.setQuery(e.target.value); if (!e.target.value) { setDestCoords(null); onClear(); } }}
-          onFocus={() => dest.results.length > 0 && dest.setOpen(true)}
+          onFocus={() => { /* don't re-open on focus after selection */ }}
           autoComplete="off" spellCheck={false}
           style={{ color: '#89cff0' }}
         />

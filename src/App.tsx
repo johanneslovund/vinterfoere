@@ -185,6 +185,8 @@ export default function App() {
         navInfo={navInfo} onNavInfo={setNavInfo}
         onResetGps={handleResetGps}
         navSteps={navigating && routeResult ? routeResult.steps : undefined}
+        navFerries={navigating ? ferryAnalyses : undefined}
+        routeStartTime={routeStartTime}
         onStopNavigation={() => setNavigating(false)}
       />
     </>

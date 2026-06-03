@@ -97,10 +97,12 @@ interface MapViewProps {
   mapStyle:         MapStyle;
   onMapStyle:       (s: MapStyle) => void;
   onResetGps:       () => void;
-  navSteps?:        RouteStep[];
-  navInfo?:         NavInfo | null;
-  onNavInfo?:       (info: NavInfo) => void;
+  navSteps?:         RouteStep[];
+  navInfo?:          NavInfo | null;
+  onNavInfo?:        (info: NavInfo) => void;
   onStopNavigation?: () => void;
+  navFerries?:       import('../../services/ferryService').FerryAnalysis[];
+  routeStartTime?:   Date;
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -109,7 +111,7 @@ export function MapView({
   data, toggles, onToggle, flyTarget, routeResult,
   onMapClick, webcams, hazards, pinLocation,
   mapStyle, onMapStyle, onResetGps,
-  navSteps, navInfo, onNavInfo, onStopNavigation,
+  navSteps, navInfo, onNavInfo, onStopNavigation, navFerries, routeStartTime,
 }: MapViewProps) {
   const tiles = MAP_TILES[mapStyle];
 
@@ -153,7 +155,10 @@ export function MapView({
 
       {/* Navigation UI overlay — outside MapContainer (no useMap needed) */}
       {navSteps && navSteps.length > 0 && onStopNavigation && (
-        <NavigationOverlay steps={navSteps} navInfo={navInfo ?? null} onStop={onStopNavigation} />
+        <NavigationOverlay
+          steps={navSteps} navInfo={navInfo ?? null} onStop={onStopNavigation}
+          ferryAnalyses={navFerries} routeStartTime={routeStartTime}
+        />
       )}
 
       {/* Map style selector — top right */}

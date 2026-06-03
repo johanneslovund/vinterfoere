@@ -65,14 +65,20 @@ export function UserLocationLayer() {
     };
 
     function addOrientationListener() {
-      // iOS 13+ requires permission
       const DOE = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
         requestPermission?: () => Promise<string>;
       };
       if (typeof DOE.requestPermission === 'function') {
-        DOE.requestPermission()
-          .then(perm => { if (perm === 'granted') window.addEventListener('deviceorientation', handleOrientation, true); })
-          .catch(() => {});
+        // iOS 13+: request on first user touch (permission API requires user gesture)
+        const handler = () => {
+          DOE.requestPermission?.()
+            .then(perm => { if (perm === 'granted') window.addEventListener('deviceorientation', handleOrientation, true); })
+            .catch(() => {});
+          document.removeEventListener('touchstart', handler);
+          document.removeEventListener('click', handler);
+        };
+        document.addEventListener('touchstart', handler, { once: true });
+        document.addEventListener('click',      handler, { once: true });
       } else {
         window.addEventListener('deviceorientation', handleOrientation, true);
       }

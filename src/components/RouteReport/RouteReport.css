@@ -13,7 +13,7 @@
   max-height: calc(100vh - var(--safe-top, 16px) - var(--search-panel-h) - 20px - env(safe-area-inset-bottom));
   overflow-y: auto;
   /* Single unified background — no stark colour jumps */
-  background: rgba(16, 20, 30, 0.97);
+  background: rgba(12,16,26,0.70);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255,255,255,0.1);
@@ -272,7 +272,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: rgba(16, 20, 30, 0.98);
+  background: rgba(12,16,26,0.78);
   border-radius: 14px 14px 0 0;
   padding: 14px 16px 10px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
