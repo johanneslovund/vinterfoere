@@ -90,6 +90,7 @@ interface MapViewProps {
   flyTarget:     { lat: number; lon: number; zoom?: number; duration?: number } | null;
   routeResult:   RouteResult | null;
   onMapClick:    (lat: number, lon: number) => void;
+  onSelectAlt?:  (alt: import('../../services/routeApi').AlternateRoute) => void;
   webcams:       Webcam[];
   hazards:       Hazard[];
   pinLocation:      { lat: number; lon: number } | null;
@@ -108,7 +109,7 @@ interface MapViewProps {
 
 export function MapView({
   data, toggles, onToggle, flyTarget, routeResult,
-  onMapClick, webcams, hazards, pinLocation,
+  onMapClick, onSelectAlt, webcams, hazards, pinLocation,
   mapStyle, onMapStyle, onResetGps,
   navSteps, navInfo, onNavInfo, onStopNavigation, navFerries, routeStartTime,
 }: MapViewProps) {
@@ -134,7 +135,14 @@ export function MapView({
         {toggles.webcam  && <WebcamLayer cameras={webcams} />}
         {toggles.hazards && <HazardLayer hazards={hazards} />}
 
-        {routeResult && <RouteLayer coordinates={routeResult.coordinates} gridData={data} />}
+        {routeResult && (
+          <RouteLayer
+            coordinates={routeResult.coordinates}
+            gridData={data}
+            alternates={routeResult.alternates}
+            onSelectAlt={onSelectAlt}
+          />
+        )}
 
         {/* Weather station dots removed — heatmap shows risk visually */}
 

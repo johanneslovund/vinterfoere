@@ -23,12 +23,19 @@ export interface RouteStep {
   mode: string                 // 'driving' | 'ferry'
 }
 
+export interface AlternateRoute {
+  coordinates: [number, number][]
+  distanceKm: number
+  durationMin: number
+}
+
 export interface RouteResult {
   coordinates: [number, number][]  // [lat, lon]
   distanceKm: number
   durationMin: number
   ferries: FerryStep[]
   steps: RouteStep[]
+  alternates: AlternateRoute[]
 }
 
 // ── Norwegian instruction generation ─────────────────────────────────────────
@@ -76,7 +83,7 @@ export async function fetchRoute(
   const url =
     `https://router.project-osrm.org/route/v1/driving/` +
     `${from[1]},${from[0]};${to[1]},${to[0]}` +
-    `?overview=full&geometries=geojson&steps=true`
+    `?overview=full&geometries=geojson&steps=true&alternatives=3`
   const res = await fetch(url)
   if (!res.ok) throw new Error('Kunne ikke hente rute')
   const data = await res.json() as {
@@ -88,6 +95,13 @@ export async function fetchRoute(
     }>
   }
   const route = data.routes[0]
+
+  // Build alternates (routes 1+)
+  const alternates: AlternateRoute[] = data.routes.slice(1).map(r => ({
+    coordinates: r.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]),
+    distanceKm:  r.distance / 1000,
+    durationMin: r.duration / 60,
+  }))
 
   const ferries: FerryStep[] = []
   const steps:   RouteStep[] = []
@@ -137,5 +151,6 @@ export async function fetchRoute(
     durationMin: route.duration / 60,
     ferries,
     steps,
+    alternates,
   }
 }

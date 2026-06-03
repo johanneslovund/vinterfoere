@@ -271,7 +271,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest, voiceContext }: Se
         <span className="search-field__sep" />
         {fromGps ? (
           /* GPS chip — × is right next to the text */
-          <div className="search-gps-chip" style={{ flex: 1 }}>
+          <div className="search-gps-chip">
             <span>{gpsLoading ? 'Henter posisjon…' : 'Min posisjon'}</span>
             <button className="search-gps-chip__x"
               onClick={() => { setFromGps(false); setFromCoords(null); from.clear(); }}>×</button>

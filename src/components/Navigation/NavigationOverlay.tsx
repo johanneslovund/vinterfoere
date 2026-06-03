@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { RouteStep } from '../../services/routeApi'
 import { NavInfo } from './NavigationMapController'
 import { FerryAnalysis } from '../../services/ferryService'
@@ -18,10 +18,14 @@ interface Props {
 }
 
 export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTime, onStop }: Props) {
-  // Per-ferry skip offsets: user can choose a later departure
   const [ferrySkips, setFerrySkips] = useState<number[]>([]);
-  // Only show the first ferry (index 0) at a time to minimize clutter
   const ferryIdx = 0;
+  // Live clock — updates every 20s so ferry bar stays current
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 20_000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!steps.length) return null
 
@@ -31,7 +35,25 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
 
   return (
     <div className="nav-overlay">
-      {/* Main instruction card */}
+      {/* Status bar FIRST — distance, time, ETA */}
+      <div className="nav-status">
+        <div className="nav-status__item">
+          <span className="nav-status__value">{fmtDistance(navInfo?.remainDist ?? 0)}</span>
+          <span className="nav-status__label">Gjenstår</span>
+        </div>
+        <div className="nav-status__divider" />
+        <div className="nav-status__item">
+          <span className="nav-status__value">{fmtDuration(navInfo?.remainMin ?? 0)}</span>
+          <span className="nav-status__label">Tid</span>
+        </div>
+        <div className="nav-status__divider" />
+        <div className="nav-status__item">
+          <span className="nav-status__value">{navInfo?.eta ?? '--:--'}</span>
+          <span className="nav-status__label">ETA</span>
+        </div>
+      </div>
+
+      {/* Instruction card */}
       <div className="nav-instruction">
         <div className="nav-instruction__arrow">
           {step ? maneuverArrow(step.maneuverType, step.maneuverModifier) : '▶'}
@@ -47,14 +69,30 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
         <button className="nav-instruction__stop" onClick={onStop}>Stopp</button>
       </div>
 
-      {/* Ferry progress line — thin, colour-coded by margin */}
+      {/* Ferry progress line */}
       {ferryAnalyses && ferryAnalyses.length > 0 && (() => {
-        const fa  = ferryAnalyses[ferryIdx];
-        const now = new Date();
-        const elapsed   = routeStartTime
+        const fa = ferryAnalyses[ferryIdx];
+
+        // Prefer GPS-based remaining time (navInfo.remainMin) over elapsed-time estimate.
+        // If navInfo available: estimate share of route remaining that's before the ferry.
+        // Ferry is driveDistanceToFerryKm from start; use fraction of total route.
+        const elapsed = routeStartTime
           ? (now.getTime() - routeStartTime.getTime()) / 60000 : 0;
-        const remaining = Math.max(0, fa.ferry.driveTimeToFerryMin - elapsed);
-        const liveEta   = new Date(now.getTime() + remaining * 60 * 1000);
+
+        // Use GPS speed to estimate remaining time to ferry when available
+        let remainingToFerryMin: number;
+        if (navInfo && navInfo.remainDist > 0 && navInfo.remainMin > 0) {
+          // Compute current speed from remaining route data, apply to distance-to-ferry
+          const speedMs = navInfo.remainDist / (navInfo.remainMin * 60);
+          const ferryDistM = fa.ferry.driveDistanceToFerryKm * 1000;
+          const drivenM    = Math.min(ferryDistM, elapsed / fa.ferry.driveTimeToFerryMin * ferryDistM);
+          const remFerryM  = Math.max(0, ferryDistM - drivenM);
+          remainingToFerryMin = speedMs > 0 ? remFerryM / speedMs / 60 : 0;
+        } else {
+          remainingToFerryMin = Math.max(0, fa.ferry.driveTimeToFerryMin - elapsed);
+        }
+
+        const liveEta = new Date(now.getTime() + remainingToFerryMin * 60 * 1000);
 
         const upcoming = fa.departures.filter(
           d => d.time >= new Date(liveEta.getTime() - 2 * 60 * 1000)
@@ -141,24 +179,6 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
           </div>
         );
       })()}
-
-      {/* Status bar */}
-      <div className="nav-status">
-        <div className="nav-status__item">
-          <span className="nav-status__value">{fmtDistance(navInfo?.remainDist ?? 0)}</span>
-          <span className="nav-status__label">Gjenstår</span>
-        </div>
-        <div className="nav-status__divider" />
-        <div className="nav-status__item">
-          <span className="nav-status__value">{fmtDuration(navInfo?.remainMin ?? 0)}</span>
-          <span className="nav-status__label">Tid</span>
-        </div>
-        <div className="nav-status__divider" />
-        <div className="nav-status__item">
-          <span className="nav-status__value">{navInfo?.eta ?? '--:--'}</span>
-          <span className="nav-status__label">ETA</span>
-        </div>
-      </div>
 
       {/* Next step + compass */}
       <div className="nav-bottom-row">

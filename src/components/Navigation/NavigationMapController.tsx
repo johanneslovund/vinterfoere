@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
+import L from 'leaflet'
 import { RouteStep } from '../../services/routeApi'
 import { findCurrentStep, remainingDistance } from '../../services/navigationService'
 
@@ -109,9 +110,18 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
 
         onUpdate({ stepIdx, remainDist: remDist, remainMin, eta, bearing })
 
-        // Keep user centred — only when they're not manually exploring
+        // Pan only when user not interacting AND position is near viewport edge
         if (!userInteracting) {
-          map.panTo([lat, lon], { animate: true, duration: 0.4, noMoveStart: true })
+          const bounds = map.getBounds()
+          const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25
+          const lonPad = (bounds.getEast()  - bounds.getWest())  * 0.25
+          const inner  = L.latLngBounds(
+            [bounds.getSouth() + latPad, bounds.getWest() + lonPad],
+            [bounds.getNorth() - latPad, bounds.getEast() - lonPad]
+          )
+          if (!inner.contains([lat, lon])) {
+            map.panTo([lat, lon], { animate: true, duration: 0.6, noMoveStart: true })
+          }
         }
 
         // Auto-end

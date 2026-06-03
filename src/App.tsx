@@ -6,7 +6,7 @@ import { SearchPanel, NavDestPill } from './components/SearchBar/SearchBar';
 import { SplashScreen } from './components/SplashScreen/SplashScreen';
 import { RouteReport } from './components/RouteReport/RouteReport';
 import { LocationPanel } from './components/LocationPanel/LocationPanel';
-import { fetchRoute, RouteResult } from './services/routeApi';
+import { fetchRoute, RouteResult, AlternateRoute } from './services/routeApi';
 import { analyzeRoute, RouteAnalysis } from './services/routeAnalysis';
 import { fetchTrafficFlow, TrafficFlow } from './services/trafficFlow';
 import { reverseGeocode, nearestWeather } from './services/locationAnalysis';
@@ -197,7 +197,14 @@ export default function App() {
       <MapView
         data={data} toggles={toggles} onToggle={onToggle}
         flyTarget={flyTarget} routeResult={routeResult}
-        onMapClick={handleMapClick} webcams={webcams} hazards={hazards}
+        onMapClick={handleMapClick}
+        onSelectAlt={(alt: AlternateRoute) => {
+          // Swap active route to selected alternate
+          if (routeResult) {
+            setRouteResult({ ...routeResult, coordinates: alt.coordinates, distanceKm: alt.distanceKm, durationMin: alt.durationMin });
+          }
+        }}
+        webcams={webcams} hazards={hazards}
         pinLocation={pinLocation} mapStyle={mapStyle}
         onMapStyle={(s) => { setMapStyle(s); localStorage.setItem('vf-mapStyle', s); }}
         navInfo={navInfo} onNavInfo={setNavInfo}
