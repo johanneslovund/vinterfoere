@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { searchLocations, GeoResult } from '../../services/geocodeApi';
 import { MicIcon } from '../Icons/Icons';
+import { MicOverlay } from '../MicOverlay/MicOverlay';
+import { speak, stopSpeaking, handleVoiceQuery, VoiceContext } from '../../services/voiceQuery';
 import './SearchBar.css';
 
 // ── shared address-search hook ────────────────────────────────────────────────
@@ -33,10 +35,11 @@ interface SearchPanelProps {
   onRoute: (from: [number, number], to: [number, number], fromName: string, toName: string) => void;
   onClear: () => void;
   onGpsRequest: () => Promise<[number, number] | null>;
+  voiceContext?: VoiceContext;
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
-export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps) {
+export function SearchPanel({ onRoute, onClear, onGpsRequest, voiceContext }: SearchPanelProps) {
   const dest = useAddressSearch();                   // Phase 1 — destination search
   const from = useAddressSearch();                   // Phase 2 — start point search
 
@@ -48,7 +51,10 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
 
   const pillRef    = useRef<HTMLDivElement>(null);
   const fromRef    = useRef<HTMLDivElement>(null);
-  const [listening, setListening] = useState(false);
+  const [micOpen,    setMicOpen]    = useState(false);
+  const [micStatus,  setMicStatus]  = useState<'listening'|'processing'|'speaking'|'idle'>('idle');
+  const [micText,    setMicText]    = useState('');
+  const [micResp,    setMicResp]    = useState('');
 
   // Speech recognition (Norwegian, browser API)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,18 +72,43 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
     return r;
   }, []);
 
-  function startListening(onResult: (text: string) => void) {
+  function openMic() {
     if (!recognition) return;
+    setMicOpen(true); setMicText(''); setMicResp(''); setMicStatus('listening');
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (e: any) => {
       const text = e.results[0][0].transcript as string;
-      onResult(text);
-      setListening(false);
+      setMicText(text);
+      setMicStatus('processing');
+
+      // Check if it's a voice query (question) or an address search
+      const reply = voiceContext ? handleVoiceQuery(text, voiceContext) : null;
+
+      if (reply) {
+        setMicResp(reply);
+        setMicStatus('speaking');
+        speak(reply);
+        // Auto-close after reply finishes
+        const words = reply.split(' ').length;
+        setTimeout(() => { setMicOpen(false); stopSpeaking(); }, Math.max(4000, words * 420));
+      } else {
+        // Treat as address — fill search field and close overlay
+        dest.setQuery(text);
+        setMicStatus('idle');
+        setTimeout(() => setMicOpen(false), 600);
+      }
     };
-    recognition.onerror = () => setListening(false);
-    recognition.onend   = () => setListening(false);
-    setListening(true);
+    recognition.onerror = () => { setMicStatus('idle'); setTimeout(() => setMicOpen(false), 1000); };
+    recognition.onend   = () => { if (micStatus === 'listening') setMicStatus('idle'); };
     recognition.start();
+  }
+
+  function closeMic() {
+    recognition?.stop();
+    stopSpeaking();
+    setMicOpen(false);
+    setMicStatus('idle');
   }
 
   // Phase: 'pill' = single search bar, 'expanded' = full route panel
@@ -140,9 +171,22 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
     onClear();
   }
 
+  // ── Mic overlay (shown over everything when recording) ───────────────────
+  const micOverlayEl = micOpen ? (
+    <MicOverlay
+      status={micStatus}
+      transcript={micText}
+      response={micResp}
+      onClose={closeMic}
+      onStop={closeMic}
+    />
+  ) : null;
+
   // ── Phase 1: single pill ────────────────────────────────────────────────────
   if (phase === 'pill') {
     return (
+      <>
+      {micOverlayEl}
       <div className="search-pill-wrap" ref={pillRef}>
         <div className="search-pill">
           <img
@@ -164,8 +208,8 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
             ? <button className="search-pill__clear" onClick={() => dest.clear()}>×</button>
             : recognition && (
               <button
-                className={`search-pill__mic${listening ? ' search-pill__mic--listening' : ''}`}
-                onClick={() => startListening(text => { dest.setQuery(text); })}
+                className="search-pill__mic"
+                onClick={openMic}
                 title="Taleinndata"
               >
                 <MicIcon size={17} />
@@ -188,11 +232,14 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
           </div>
         )}
       </div>
+      </>
     );
   }
 
   // ── Phase 2: expanded panel (destination set) ───────────────────────────────
   return (
+    <>
+    {micOverlayEl}
     <div className="search-panel">
       {/* Destination row — always filled */}
       <div className="search-field" style={{ borderColor: 'rgba(137,207,240,0.3)' }}>
@@ -268,6 +315,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
         <button className="search-close" onClick={clearAll} title="Tøm søk">×</button>
       </div>
     </div>
+    </>
   );
 }
 

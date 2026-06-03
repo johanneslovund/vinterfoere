@@ -1,0 +1,102 @@
+.mic-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  animation: micFadeIn 0.18s ease;
+}
+
+@keyframes micFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mic-overlay__close {
+  position: absolute;
+  top: calc(var(--safe-top, 16px) + 10px);
+  right: 20px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 44px; height: 44px;
+  color: rgba(255,255,255,0.8);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+.mic-overlay__close:hover { background: rgba(255,255,255,0.22); }
+
+/* Outer glow ring — pulses while recording */
+.mic-overlay__ring {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(244, 67, 54, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: micRingPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes micRingPulse {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%       { transform: scale(1.12); opacity: 0.7; }
+}
+
+/* Inner button */
+.mic-overlay__btn {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #e53935;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px rgba(229,57,53,0.55);
+  color: #fff;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+.mic-overlay__btn:active { background: #c62828; }
+
+.mic-overlay__status {
+  font-size: 16px;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.3px;
+}
+
+/* Recognized text (or AI response) */
+.mic-overlay__text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e6edf3;
+  text-align: center;
+  max-width: 80vw;
+  min-height: 30px;
+  padding: 0 16px;
+}
+
+.mic-overlay__response {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  max-width: 80vw;
+  line-height: 1.55;
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+}

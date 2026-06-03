@@ -12,6 +12,7 @@ import { fetchTrafficFlow, TrafficFlow } from './services/trafficFlow';
 import { reverseGeocode, nearestWeather } from './services/locationAnalysis';
 import { generateLocalAnalysis, generateRouteAnalysis } from './services/localAnalysis';
 import { fetchWebcams, Webcam } from './services/webcamService';
+import { VoiceContext } from './services/voiceQuery';
 import { fetchHazards, Hazard } from './services/hazardService';
 import { analyseFerries, FerryAnalysis } from './services/ferryService';
 import { GridWeather } from './types/weather';
@@ -152,7 +153,12 @@ export default function App() {
 
       {navigating
         ? <NavDestPill destination={routeToName || 'Destinasjon'} />
-        : <SearchPanel onRoute={handleRoute} onClear={handleClear} onGpsRequest={handleGpsRequest} />
+        : <SearchPanel
+            onRoute={handleRoute}
+            onClear={handleClear}
+            onGpsRequest={handleGpsRequest}
+            voiceContext={{ ferryAnalyses, routeStartTime, destinationName: routeToName } as VoiceContext}
+          />
       }
 
       {routeResult && routeAnalysis && !navigating && (

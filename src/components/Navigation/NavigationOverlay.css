@@ -214,3 +214,59 @@
 }
 .nav-ferry-card__skip:hover { background: rgba(255,255,255,0.14); color: #e6edf3; }
 .nav-ferry-card__skip--reset { color: rgba(255,255,255,0.35); font-weight: 400; }
+
+/* ── Thin ferry bar ──────────────────────────────────── */
+.nav-ferry-bar {
+  background: rgba(8,11,20,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-left: 3px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  padding: 7px 12px;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.nav-ferry-bar--ok   { border-left-color: #66bb6a; }
+.nav-ferry-bar--warn { border-left-color: #f44336; }
+.nav-ferry-bar--next { border-left-color: #ff9800; }
+
+.nav-ferry-bar__name {
+  color: rgba(255,255,255,0.55);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-ferry-bar__dep {
+  color: #e6edf3;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.nav-ferry-bar__status {
+  flex: 1;
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+}
+.nav-ferry-bar--ok   .nav-ferry-bar__status { color: #66bb6a; }
+.nav-ferry-bar--warn .nav-ferry-bar__status { color: #ff6b6b; }
+
+.nav-ferry-bar__btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.7);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition: all 0.12s;
+}
+.nav-ferry-bar__btn:hover { background: rgba(255,255,255,0.18); }
+.nav-ferry-bar__btn--reset { color: rgba(255,255,255,0.4); }
