@@ -124,3 +124,12 @@
   text-align: center;
   padding: 2px;
 }
+
+.nav-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: all;
+}
+.nav-next { flex: 1; }
+.nav-compass { flex-shrink: 0; opacity: 0.8; }

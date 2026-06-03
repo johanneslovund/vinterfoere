@@ -6,10 +6,10 @@
   width: min(380px, calc(100vw - 24px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: rgba(8, 11, 20, 0.62);
+  background: var(--glass-bg);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
   box-shadow: 0 12px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07);
   animation: locSlideIn 0.22s ease;
@@ -55,7 +55,7 @@
 .loc-panel__name {
   flex: 1;
   font-size: 14px; font-weight: 700;
-  color: #e6edf3;
+  color: var(--text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -79,7 +79,7 @@
 .loc-panel__weather-icon { width: 36px; height: 36px; flex-shrink: 0; }
 .loc-panel__weather-stats { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 .loc-panel__stat { font-size: 12px; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 4px; }
-.loc-panel__stat strong { color: #e6edf3; font-weight: 600; }
+.loc-panel__stat strong { color: var(--text-primary); font-weight: 600; }
 .loc-panel__risk-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: #000; flex-shrink: 0; align-self: flex-start; }
 
 /* Traffic row */
@@ -97,7 +97,7 @@
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
 
 .loc-panel__ai-text { font-size: 12.5px; line-height: 1.65; color: rgba(255,255,255,0.75); }
-.loc-panel__ai-text strong { color: #e6edf3; font-weight: 700; }
+.loc-panel__ai-text strong { color: var(--text-primary); font-weight: 700; }
 .loc-panel__ai-error { font-size: 11px; color: rgba(244,67,54,0.8); font-style: italic; }
 
 .loc-panel__ai-skeleton { display: flex; flex-direction: column; gap: 5px; }

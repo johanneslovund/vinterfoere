@@ -60,13 +60,32 @@ export function NavigationOverlay({ steps, navInfo, onStop }: Props) {
         </div>
       </div>
 
-      {/* Next step hint */}
-      {nextStep && (
-        <div className="nav-next">
-          Deretter: {maneuverArrow(nextStep.maneuverType, nextStep.maneuverModifier)}{' '}
-          {nextStep.instruction}
-        </div>
-      )}
+      {/* Next step hint + compass bearing */}
+      <div className="nav-bottom-row">
+        {nextStep && (
+          <div className="nav-next">
+            Deretter: {maneuverArrow(nextStep.maneuverType, nextStep.maneuverModifier)}{' '}
+            {nextStep.instruction}
+          </div>
+        )}
+        {navInfo?.bearing !== null && navInfo?.bearing !== undefined && (
+          <div className="nav-compass" title={`${Math.round(navInfo.bearing)}°`}>
+            <svg width="28" height="28" viewBox="0 0 28 28">
+              <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
+              <polygon
+                points="14,4 11,18 14,15 17,18"
+                fill="#e53935"
+                transform={`rotate(${navInfo.bearing}, 14, 14)`}
+              />
+              <polygon
+                points="14,24 11,10 14,13 17,10"
+                fill="rgba(255,255,255,0.4)"
+                transform={`rotate(${navInfo.bearing}, 14, 14)`}
+              />
+            </svg>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

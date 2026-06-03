@@ -1,21 +1,40 @@
 :root {
-  --accent-ice: #89cff0;
+  --accent-ice: #2b8fd0;
   --accent-danger: #f44336;
-  --text-primary: #e6edf3;
-  --text-muted: rgba(255, 255, 255, 0.42);
-  --border: rgba(255, 255, 255, 0.1);
   --radius: 10px;
-
-  --glass-bg: rgba(12, 16, 24, 0.55);
-  --glass-bg-heavy: rgba(10, 13, 20, 0.75);
-  --glass-blur: blur(20px);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 
   /* Safe area for Dynamic Island / notch */
   --safe-top: max(16px, calc(env(safe-area-inset-top) + 8px));
   --safe-bottom: max(0px, env(safe-area-inset-bottom));
+
+  /* Dark mode defaults */
+  --text-primary:  #e6edf3;
+  --text-muted:    rgba(255,255,255,0.42);
+  --border:        rgba(255,255,255,0.1);
+  --glass-bg:      rgba(8,11,20,0.80);
+  --glass-bg-sub:  rgba(255,255,255,0.04);
+  --glass-blur:    blur(20px);
+  --glass-border:  rgba(255,255,255,0.10);
+  --glass-shadow:  0 8px 32px rgba(0,0,0,0.45);
+  --glass-overlay: rgba(8,11,20,0.88);
+  --label-muted:   rgba(255,255,255,0.28);
+  --app-bg:        #060a10;
+  --sep:           rgba(255,255,255,0.06);
+}
+
+/* ── Light mode overrides ────────────────────────────── */
+[data-mode="light"] {
+  --text-primary:  #1a1f2e;
+  --text-muted:    rgba(0,0,0,0.50);
+  --border:        rgba(0,0,0,0.10);
+  --glass-bg:      rgba(255,255,255,0.88);
+  --glass-bg-sub:  rgba(0,0,0,0.04);
+  --glass-border:  rgba(0,0,0,0.10);
+  --glass-shadow:  0 8px 32px rgba(0,0,0,0.14);
+  --glass-overlay: rgba(255,255,255,0.95);
+  --label-muted:   rgba(0,0,0,0.38);
+  --app-bg:        #f0f2f5;
+  --sep:           rgba(0,0,0,0.07);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,9 +42,9 @@
 html, body, #root {
   height: 100%; width: 100%;
   overflow: hidden;
-  background: #060a10;
-  /* Prevent iOS bounce */
+  background: var(--app-bg);
   overscroll-behavior: none;
+  transition: background 0.3s ease;
 }
 
 body {
@@ -33,7 +52,6 @@ body {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
-  /* Prevent callout/selection on map taps */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
@@ -42,7 +60,7 @@ body {
 /* Allow text selection in inputs */
 input, textarea { -webkit-user-select: auto; user-select: auto; }
 
-.leaflet-container { background: #060a10; }
+.leaflet-container { background: var(--app-bg); }
 
 .leaflet-control-attribution {
   background: rgba(6, 10, 16, 0.6) !important;

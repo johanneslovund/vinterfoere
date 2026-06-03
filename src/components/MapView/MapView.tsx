@@ -1,9 +1,9 @@
 import { useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { GridWeather, riskLevel, RISK_COLORS, RISK_LABELS } from '../../types/weather';
+import { GridWeather } from '../../types/weather';
 import { CanvasHeatmapLayer } from './CanvasHeatmapLayer';
 import { TrafficLayer } from './TrafficLayer';
 import { RouteLayer } from './RouteLayer';
@@ -136,21 +136,7 @@ export function MapView({
 
         {routeResult && <RouteLayer coordinates={routeResult.coordinates} gridData={data} />}
 
-        {data.map((w) => {
-          const level = riskLevel(w.riskScore);
-          return (
-            <CircleMarker key={`${w.lat},${w.lon}`} center={[w.lat, w.lon]} radius={5}
-              pathOptions={{ fillColor: RISK_COLORS[level], fillOpacity: 0.9, color: '#000', weight: 1 }}>
-              <Tooltip className="vf-tooltip">
-                <strong>{w.name}</strong><br />
-                {RISK_LABELS[level]} — {(w.riskScore * 100).toFixed(0)}% risiko<br />
-                {w.airTemperature > 0 ? '+' : ''}{w.airTemperature.toFixed(1)}°C
-                &nbsp;·&nbsp;{w.windSpeed.toFixed(0)} m/s
-                {w.precipitationAmount > 0 && <> · {w.precipitationAmount.toFixed(1)} mm</>}
-              </Tooltip>
-            </CircleMarker>
-          );
-        })}
+        {/* Weather station dots removed — heatmap shows risk visually */}
 
         {pinLocation && <PinMarker lat={pinLocation.lat} lon={pinLocation.lon} />}
         <FlyTo target={flyTarget} />

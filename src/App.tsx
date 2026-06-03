@@ -36,6 +36,11 @@ export default function App() {
   const [mapStyle, setMapStyle] = useState<MapStyle>(
     () => (localStorage.getItem('vf-mapStyle') as MapStyle) ?? 'light'
   );
+
+  // Apply data-mode to root so CSS variables respond to map style
+  useEffect(() => {
+    document.documentElement.setAttribute('data-mode', mapStyle);
+  }, [mapStyle]);
   const [navInfo, setNavInfo] = useState<import('./components/Navigation/NavigationMapController').NavInfo | null>(null);
   const [flyTarget, setFlyTarget] = useState<{
     lat: number; lon: number; zoom?: number; duration?: number
@@ -147,13 +152,18 @@ export default function App() {
 
       <SearchPanel onRoute={handleRoute} onClear={handleClear} onGpsRequest={handleGpsRequest} />
 
-      {routeResult && routeAnalysis && (
+      {routeResult && routeAnalysis && !navigating && (
         <RouteReport
           analysis={routeAnalysis} route={routeResult}
           routeAnalysisText={routeAnalysisText}
           ferryAnalyses={ferryAnalyses}
           routeStartTime={routeStartTime}
-          onNavigate={() => { setNavigating(true); }}
+          onNavigate={() => {
+            setNavigating(true);
+            // Zoom to user position when navigation starts
+            const pos = gpsRef.current;
+            if (pos) setFlyTarget({ lat: pos[0], lon: pos[1], zoom: 16, duration: 1 });
+          }}
           fromCoords={routeFrom} toCoords={routeTo} toName={routeToName}
           onClose={handleClear}
         />

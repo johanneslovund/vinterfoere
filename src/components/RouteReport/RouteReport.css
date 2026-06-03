@@ -13,10 +13,10 @@
   width: min(780px, calc(100vw - 24px));
   max-height: calc(100vh - var(--safe-top, 16px) - var(--search-panel-h) - 20px - env(safe-area-inset-bottom));
   overflow-y: auto;
-  background: rgba(8, 11, 20, 0.62);
+  background: var(--glass-bg);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
   padding: 14px 16px;
   box-shadow: 0 12px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
@@ -55,7 +55,7 @@
 
 .route-report__stats {
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-muted);
 }
 
 .route-report__stats strong {
@@ -92,7 +92,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: rgba(255,255,255,0.28);
+  color: var(--label-muted);
   margin-bottom: 8px;
 }
 
@@ -180,9 +180,9 @@
   color: rgba(255,255,255,0.5);
   margin-bottom: 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--sep);
 }
-.route-report__ferry-eta strong { color: #e6edf3; font-weight: 700; }
+.route-report__ferry-eta strong { color: var(--text-primary); font-weight: 700; }
 
 .route-report__ferry-warn {
   font-size: 12px;
@@ -217,7 +217,7 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-muted);
   padding: 3px 0;
 }
 
@@ -271,11 +271,12 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: rgba(8, 11, 20, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--glass-overlay);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  /* bleed to fill panel edges */
+  margin: -14px -16px 12px;
+  padding: 14px 16px 10px;
   border-radius: 14px 14px 0 0;
-  padding-bottom: 8px;
-  margin-bottom: 2px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--sep);
 }

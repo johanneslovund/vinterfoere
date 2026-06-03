@@ -32,12 +32,12 @@
 .map-toggles::-webkit-scrollbar { display: none; }
 
 .map-toggle-btn {
-  background: rgba(8,11,20,0.72);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 9px;
-  color: rgba(255,255,255,0.5);
+  color: var(--text-muted);
   padding: 8px 15px;
   font-size: 12px;
   font-weight: 600;
@@ -47,7 +47,7 @@
   transition: all 0.15s;
   box-shadow: 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
 }
-.map-toggle-btn:hover    { background: rgba(14,20,35,0.85); color: #e6edf3; }
+.map-toggle-btn:hover    { color: var(--text-primary); }
 .map-toggle-btn--active  { border-color: rgba(137,207,240,0.45); color: #89cff0; }
 
 /* ── GPS reset button (bottom right) ─────────────── */
@@ -58,12 +58,12 @@
   z-index: 800;
   width: 40px;
   height: 40px;
-  background: rgba(8,11,20,0.78);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
-  color: rgba(255,255,255,0.65);
+  color: var(--text-muted);
   font-size: 20px;
   cursor: pointer;
   display: flex;
