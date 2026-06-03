@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { RouteStep } from '../../services/routeApi'
 import { NavInfo } from './NavigationMapController'
 import { FerryAnalysis } from '../../services/ferryService'
@@ -24,8 +24,11 @@ interface Props {
   onStop:          () => void
 }
 
+// Wrapped in memo so it doesn't re-render on every GPS fix
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTime, destination, onStop: _s }: Props) {
+export const NavigationOverlay = memo(function NavigationOverlay(
+  { steps, navInfo, ferryAnalyses, routeStartTime, destination, onStop: _s }: Props
+) {
   const [ferrySkips, setFerrySkips] = useState<number[]>([]);
   const ferryIdx = 0;
   const [now, setNow] = useState(new Date());
@@ -80,17 +83,12 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
       {/* ── Ferry bar ── */}
       {ferryAnalyses && ferryAnalyses.length > 0 && (() => {
         const fa = ferryAnalyses[ferryIdx];
+        // Use TomTom-calculated drive time minus elapsed clock time.
+        // Do NOT use GPS speed — that causes the estimate to jump around
+        // every time the car changes speed slightly.
         const elapsed = routeStartTime
           ? (now.getTime() - routeStartTime.getTime()) / 60000 : 0;
-        let remainingToFerryMin: number;
-        if (navInfo && navInfo.remainDist > 0 && navInfo.remainMin > 0) {
-          const speedMs    = navInfo.remainDist / (navInfo.remainMin * 60);
-          const ferryDistM = fa.ferry.driveDistanceToFerryKm * 1000;
-          const drivenM    = Math.min(ferryDistM, elapsed / fa.ferry.driveTimeToFerryMin * ferryDistM);
-          remainingToFerryMin = speedMs > 0 ? Math.max(0, ferryDistM - drivenM) / speedMs / 60 : 0;
-        } else {
-          remainingToFerryMin = Math.max(0, fa.ferry.driveTimeToFerryMin - elapsed);
-        }
+        const remainingToFerryMin = Math.max(0, fa.ferry.driveTimeToFerryMin - elapsed);
 
         const liveEta  = new Date(now.getTime() + remainingToFerryMin * 60 * 1000);
         const upcoming = fa.departures.filter(d => d.time >= new Date(liveEta.getTime() - 2 * 60 * 1000));
@@ -150,4 +148,4 @@ export function NavigationOverlay({ steps, navInfo, ferryAnalyses, routeStartTim
       })()}
     </div>
   )
-}
+})

@@ -58,6 +58,7 @@
   font-weight: 700;
   color: rgba(255,255,255,0.75);
   font-variant-numeric: tabular-nums;
+  transition: color 0.5s ease;
 }
 
 .nav-block__met-sep {
