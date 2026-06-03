@@ -5,7 +5,6 @@
 
 .route-report {
   position: fixed;
-  /* Always sits below the expanded search panel */
   top: calc(var(--safe-top, 16px) + var(--search-panel-h) + 8px);
   left: 50%;
   transform: translateX(-50%);
@@ -13,13 +12,14 @@
   width: min(780px, calc(100vw - 24px));
   max-height: calc(100vh - var(--safe-top, 16px) - var(--search-panel-h) - 20px - env(safe-area-inset-bottom));
   overflow-y: auto;
-  background: var(--glass-bg);
+  /* Single unified background — no stark colour jumps */
+  background: rgba(16, 20, 30, 0.97);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+  padding: 0;              /* padding inside sticky + body */
+  box-shadow: 0 16px 56px rgba(0,0,0,0.6);
   animation: slideDown 0.25s ease;
 }
 
@@ -77,12 +77,13 @@
 .route-report__body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
+  padding: 12px 16px 14px;
 }
 
 .route-report__section {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 9px;
   padding: 10px 12px;
 }
@@ -266,17 +267,14 @@
   text-decoration-color: rgba(255,255,255,0.2);
 }
 
-/* Sticky top area (header + nav links) */
+/* Sticky top area — same background as panel, clear divider line */
 .route-report__sticky {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--glass-overlay);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  /* bleed to fill panel edges */
-  margin: -14px -16px 12px;
-  padding: 14px 16px 10px;
+  background: rgba(16, 20, 30, 0.98);
   border-radius: 14px 14px 0 0;
-  border-bottom: 1px solid var(--sep);
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
+

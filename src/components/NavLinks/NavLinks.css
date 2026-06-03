@@ -2,21 +2,19 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  margin-top: 6px;
+  /* No top border here — sticky header provides the separator */
 }
 
 .nav-link {
   display: inline-flex;
   align-items: center;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 7px;
-  padding: 5px 13px;
-  font-size: 11px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.7);
   text-decoration: none;
   letter-spacing: 0.1px;
   transition: all 0.15s;
@@ -24,9 +22,9 @@
 }
 
 .nav-link:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.14);
   color: #e6edf3;
-  border-color: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.25);
 }
 
 .nav-link--primary {

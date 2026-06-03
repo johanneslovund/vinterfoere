@@ -65,10 +65,10 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
     dest.setQuery(r.shortName);
     dest.setOpen(false);
     setDestCoords([r.lat, r.lon]);
-    // Default start = Min Posisjon — set label but defer GPS fetch until route is calculated
+    // Default start = Min Posisjon — clear search state, GPS mode shown from state
     if (!fromCoords && !fromGps) {
       setFromGps(true);
-      from.setQuery('Min posisjon');
+      from.clear();   // don't set query — prevents autocomplete from firing
     }
   }
 
@@ -83,7 +83,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
     setGpsLoading(true);
     const c = await onGpsRequest();
     setGpsLoading(false);
-    if (c) { setFromGps(true); setFromCoords(c); from.setQuery('Min posisjon'); }
+    if (c) { setFromGps(true); setFromCoords(c); from.clear(); }
   }
 
   async function handleRoute() {
@@ -95,7 +95,7 @@ export function SearchPanel({ onRoute, onClear, onGpsRequest }: SearchPanelProps
       setGpsLoading(false);
       if (!gps) return;
       start = gps;
-      setFromGps(true); setFromCoords(gps); from.setQuery('Min posisjon');
+      setFromGps(true); setFromCoords(gps); from.clear();
     }
     setRouting(true);
     await onRoute(start, destCoords, fromGps ? 'Min posisjon' : (from.query || 'Start'), dest.query);
