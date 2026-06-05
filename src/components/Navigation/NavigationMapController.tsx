@@ -26,10 +26,21 @@ function smoothAngle(current: number, target: number, factor: number): number {
   return (current + diff * factor + 360) % 360
 }
 
-// ── Dead reckoning: extrapolate position given speed + bearing ────────────────
-function deadReckon(lat: number, lon: number, speedMs: number, bearingDeg: number, elapsedSec: number): [number, number] {
-  if (elapsedSec <= 0 || speedMs < 0.5) return [lat, lon]
-  const dist = Math.min(speedMs * elapsedSec, 300) // cap extrapolation at 300m
+// ── Haversine distance (metres) ───────────────────────────────────────────────
+function distM(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
+// ── Dead reckoning: extrapolate position from last fix ────────────────────────
+function deadReckon(
+  lat: number, lon: number, speedMs: number, bearingDeg: number, elapsedSec: number
+): [number, number] {
+  if (elapsedSec <= 0 || speedMs < 0.3) return [lat, lon]
+  const dist = Math.min(speedMs * elapsedSec, 500) // cap at 500m
   const R = 6371000
   const brRad  = bearingDeg * Math.PI / 180
   const latRad = lat * Math.PI / 180
@@ -45,15 +56,15 @@ function deadReckon(lat: number, lon: number, speedMs: number, bearingDeg: numbe
   return [newLatRad * 180 / Math.PI, newLonRad * 180 / Math.PI]
 }
 
-// ── Nav marker icon (updated cheaply via SVG attribute, not icon recreation) ──
-function makeNavIcon(bearing: number): L.DivIcon {
+// ── Navigation marker icon ────────────────────────────────────────────────────
+function makeNavIcon(): L.DivIcon {
   return L.divIcon({
     className: 'nav-marker',
     html: `<svg width="44" height="44" viewBox="0 0 44 44" style="overflow:visible">
       <circle cx="22" cy="22" r="14" fill="rgba(66,133,244,0.12)" stroke="rgba(66,133,244,0.3)" stroke-width="1"/>
       <path class="nav-arrow" d="M22,6 L18,22 L22,18 L26,22 Z"
         fill="rgba(66,133,244,0.85)"
-        transform="rotate(${bearing},22,22)"/>
+        transform="rotate(0,22,22)"/>
       <circle cx="22" cy="22" r="8" fill="white"/>
       <circle cx="22" cy="22" r="6" fill="#4285F4"/>
     </svg>`,
@@ -66,24 +77,25 @@ function makeNavIcon(bearing: number): L.DivIcon {
 export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
   const map = useMap()
 
-  // Persisted refs — no re-renders on update
-  const gpsFixRef     = useRef({ lat: 0, lon: 0, speedMs: 0, bearing: 0, ts: 0, valid: false })
-  const bearingRef    = useRef<number>(0)
-  const watchId       = useRef<number | null>(null)
-  const rafId         = useRef<number | null>(null)
-  const markerRef     = useRef<L.Marker | null>(null)
-  const lastTouchRef  = useRef(0)
-  const lastNavUpdate = useRef(0)
-  const lastPanRef    = useRef(0)
-  const speedBufRef   = useRef<number[]>([])
-  const zoomThrottle  = useRef(0)
+  const gpsFixRef      = useRef({ lat: 0, lon: 0, speedMs: 0, bearing: 0, ts: 0, valid: false })
+  const smoothBearing  = useRef(0)   // interpolated bearing at 60fps
+  const compassBearing = useRef(0)   // device compass fallback
+  const watchId        = useRef<number | null>(null)
+  const rafId          = useRef<number | null>(null)
+  const markerRef      = useRef<L.Marker | null>(null)
+  const lastTouchRef   = useRef(0)
+  const lastNavUpd     = useRef(0)
+  const speedBufRef    = useRef<number[]>([])
+  const zoomThrottle   = useRef(0)
+  // Track last map-set position to avoid redundant calls
+  const lastSetPos     = useRef<[number,number]>([0,0])
 
-  // Device orientation → compass bearing
+  // Device orientation → compass fallback
   useEffect(() => {
     const h = (e: DeviceOrientationEvent) => {
       const raw = (e as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading
-      const b = raw !== undefined && raw !== null ? raw : e.alpha !== null ? (360 - e.alpha) % 360 : null
-      if (b !== null) bearingRef.current = smoothAngle(bearingRef.current, b, 0.08)
+      const b   = raw != null ? raw : e.alpha != null ? (360 - e.alpha) % 360 : null
+      if (b != null) compassBearing.current = smoothAngle(compassBearing.current, b, 0.08)
     }
     const DOE = DeviceOrientationEvent as typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> }
     if (typeof DOE.requestPermission === 'function') {
@@ -97,7 +109,7 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
   useEffect(() => {
     if (!navigator.geolocation || !steps.length) return
 
-    // Touch detection
+    // Touch pause detection
     const container = map.getContainer()
     const onTouch = () => { lastTouchRef.current = Date.now() }
     container.addEventListener('touchstart', onTouch, { passive: true })
@@ -105,44 +117,47 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
     map.on('dragstart', onTouch)
     map.on('zoomstart', onTouch)
 
-    // ── 60fps rAF animation loop ──────────────────────────────────────────────
+    // ── 60fps requestAnimationFrame loop ──────────────────────────────────────
     const loop = () => {
       const fix = gpsFixRef.current
       if (fix.valid) {
-        const now    = Date.now()
+        const now     = Date.now()
         const elapsed = (now - fix.ts) / 1000
+
+        // Dead-reckoned position (approximation between GPS fixes)
         const [eLat, eLon] = deadReckon(fix.lat, fix.lon, fix.speedMs, fix.bearing, elapsed)
 
-        // Update marker position at 60fps via setLatLng (pure DOM, no React)
+        // Per-frame smooth bearing interpolation
+        smoothBearing.current = smoothAngle(smoothBearing.current, fix.bearing, 0.06)
+
+        // ── Update marker (no React, pure DOM) ────────────────────────────────
         if (!markerRef.current) {
-          markerRef.current = L.marker([eLat, eLon], {
-            icon: makeNavIcon(fix.bearing),
-            zIndexOffset: 900,
-          }).addTo(map)
+          markerRef.current = L.marker([eLat, eLon], { icon: makeNavIcon(), zIndexOffset: 900 }).addTo(map)
         } else {
           markerRef.current.setLatLng([eLat, eLon])
-          // Update arrow direction cheaply via SVG transform attribute
-          const arrow = markerRef.current.getElement()?.querySelector('.nav-arrow')
-          if (arrow) arrow.setAttribute('transform', `rotate(${fix.bearing},22,22)`)
         }
+        // Rotate direction arrow via SVG attribute — no icon recreation
+        const arrow = markerRef.current.getElement()?.querySelector('.nav-arrow')
+        if (arrow) arrow.setAttribute('transform', `rotate(${smoothBearing.current.toFixed(1)},22,22)`)
 
-        // Throttled map pan: ~5fps (every 200ms), smooth Leaflet animation
-        const userIdle = now - lastTouchRef.current > 6000
-        if (userIdle && now - lastPanRef.current > 200) {
-          lastPanRef.current = now
-          const bounds  = map.getBounds()
-          const latSpan = (bounds.getNorth() - bounds.getSouth()) * 0.30
-          const lonSpan = (bounds.getEast()  - bounds.getWest())  * 0.30
-          const inner   = L.latLngBounds(
-            [bounds.getSouth() + latSpan, bounds.getWest() + lonSpan],
-            [bounds.getNorth() - latSpan, bounds.getEast() - lonSpan]
-          )
-          if (!inner.contains([eLat, eLon])) {
-            // Smooth 0.5s pan — short enough not to lag, long enough to be smooth
-            map.panTo([eLat, eLon], { animate: true, duration: 0.5, easeLinearity: 0.9, noMoveStart: true })
+        // ── Move map at 60fps when user is not interacting ────────────────────
+        const userIdle = now - lastTouchRef.current > 4000
+
+        if (userIdle) {
+          // Only call setView when position changed enough (avoid pointless calls < 0.5m)
+          const [pLat, pLon] = lastSetPos.current
+          if (distM(pLat, pLon, eLat, eLon) > 0.3) {
+            lastSetPos.current = [eLat, eLon]
+            // Immediate (non-animated) repositioning — Leaflet just updates CSS transforms
+            // This is the same underlying mechanism as animated pan, just per-frame
+            map.setView([eLat, eLon], map.getZoom(), {
+              animate: false,
+              noMoveStart: true,
+            } as L.ZoomPanOptions)
           }
         }
       }
+
       rafId.current = requestAnimationFrame(loop)
     }
     rafId.current = requestAnimationFrame(loop)
@@ -153,37 +168,45 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
         const { latitude: lat, longitude: lon, speed, heading: gpsHeading } = pos.coords
         const now = Date.now()
 
-        // Smooth position
+        // Smooth incoming position
         const prev = gpsFixRef.current
         const sLat = prev.valid ? prev.lat * 0.55 + lat * 0.45 : lat
         const sLon = prev.valid ? prev.lon * 0.55 + lon * 0.45 : lon
 
-        // Smoothed speed
+        // Rolling speed average
         const rawMs = speed && speed > 0.5 ? speed : 0
         speedBufRef.current.push(rawMs)
         if (speedBufRef.current.length > 5) speedBufRef.current.shift()
         const avgMs = speedBufRef.current.reduce((s,v) => s+v,0) / speedBufRef.current.length
 
-        // Bearing: GPS heading at >8 km/h, compass otherwise
-        const speedKmh = avgMs * 3.6
-        if (gpsHeading !== null && !isNaN(gpsHeading) && speedKmh > 8) {
-          bearingRef.current = smoothAngle(bearingRef.current, gpsHeading, 0.3)
+        // Bearing: GPS above 8 km/h, compass below
+        const kmh = avgMs * 3.6
+        const targetBearing = gpsHeading != null && !isNaN(gpsHeading) && kmh > 8
+          ? gpsHeading
+          : compassBearing.current
+        gpsFixRef.current.bearing = smoothAngle(gpsFixRef.current.bearing || 0, targetBearing, kmh > 8 ? 0.35 : 0.1)
+
+        gpsFixRef.current = {
+          lat: sLat, lon: sLon,
+          speedMs: avgMs,
+          bearing: gpsFixRef.current.bearing,
+          ts: now,
+          valid: true,
         }
 
-        gpsFixRef.current = { lat: sLat, lon: sLon, speedMs: avgMs, bearing: bearingRef.current, ts: now, valid: true }
+        // NavInfo updates throttled ~1/sec
+        if (now - lastNavUpd.current > 900) {
+          lastNavUpd.current = now
+          const stepIdx = findCurrentStep(sLat, sLon, steps)
+          const remDist = remainingDistance(sLat, sLon, steps, stepIdx)
+          const remMin  = avgMs > 0.5 ? remDist / avgMs / 60 : 0
+          const eta     = new Date(now + (avgMs > 0.5 ? remDist / avgMs * 1000 : 0))
+            .toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' })
 
-        // ── Navigation metrics (throttled to ~1/sec, no speed fluctuation) ───
-        if (now - lastNavUpdate.current > 800) {
-          lastNavUpdate.current = now
-          const stepIdx  = findCurrentStep(sLat, sLon, steps)
-          const remDist  = remainingDistance(sLat, sLon, steps, stepIdx)
-          const remMin   = avgMs > 0.5 ? remDist / avgMs / 60 : 0
-          const etaDate  = new Date(now + (avgMs > 0.5 ? remDist / avgMs * 1000 : 0))
-          const eta      = etaDate.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' })
-          onUpdate({ stepIdx, remainDist: remDist, remainMin: remMin, eta, bearing: bearingRef.current })
+          onUpdate({ stepIdx, remainDist: remDist, remainMin: remMin, eta, bearing: gpsFixRef.current.bearing })
 
-          // Dynamic zoom (throttled)
-          const userIdle = now - lastTouchRef.current > 6000
+          // Dynamic zoom (every 3s max)
+          const userIdle = now - lastTouchRef.current > 4000
           if (userIdle && now - zoomThrottle.current > 3000) {
             const distToNext = steps[stepIdx]?.distance ?? remDist
             const z = distToNext < 80 ? 18 : distToNext < 200 ? 17 : distToNext < 600 ? 16
@@ -198,7 +221,7 @@ export function NavigationMapController({ steps, onUpdate, onArrive }: Props) {
         }
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
     )
 
     return () => {
